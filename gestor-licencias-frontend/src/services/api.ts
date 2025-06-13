@@ -1,0 +1,29 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Interceptor para manejar errores
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Aquí puedes manejar los errores globalmente
+    if (error.response) {
+      // El servidor respondió con un código de estado fuera del rango 2xx
+      console.error('Error de respuesta:', error.response.data);
+    } else if (error.request) {
+      // La petición fue hecha pero no se recibió respuesta
+      console.error('Error de petición:', error.request);
+    } else {
+      // Algo sucedió al configurar la petición
+      console.error('Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api; 

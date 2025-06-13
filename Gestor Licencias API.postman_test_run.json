@@ -1,0 +1,462 @@
+{
+	"id": "8dcc153a-2e4b-44f8-8d71-70707a648a36",
+	"name": "Gestor Licencias API",
+	"timestamp": "2025-06-09T07:32:00.170Z",
+	"collection_id": "36157735-605b9839-1a51-4920-8b14-27c81481e7b4",
+	"folder_id": 0,
+	"environment_id": "0",
+	"totalPass": 0,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-06-09T07:31:57.695Z",
+	"totalFail": 0,
+	"results": [
+		{
+			"id": "e09f9618-d8c9-41b0-87b9-390a91a92e58",
+			"name": "Get All Departments",
+			"url": "http://localhost:3000/api/departamentos",
+			"time": 118,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				118
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "6dde5099-9204-46d0-896a-25b95cd867e9",
+			"name": "Get Department by ID",
+			"url": "http://localhost:3000/api/departamentos/1",
+			"time": 9,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				9
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "4927ed4a-793a-4aa6-ade0-688aad91577a",
+			"name": "Create Department",
+			"url": "http://localhost:3000/api/departamentos",
+			"time": 42,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				42
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c8387436-111e-47f8-8a71-a4b11907c08a",
+			"name": "Update Department",
+			"url": "http://localhost:3000/api/departamentos/1",
+			"time": 11,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				11
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e032106b-e2f1-4f3b-b3c8-241acacfe38b",
+			"name": "Delete Department",
+			"url": "http://localhost:3000/api/departamentos/1",
+			"time": 9,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				9
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "68cb8148-30fc-4660-9426-7e7fb0bc4b16",
+			"name": "Get All Positions",
+			"url": "http://localhost:3000/api/puestos",
+			"time": 14,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				14
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "824c5920-07bc-4523-823b-722fd3c7746d",
+			"name": "Get Position by ID",
+			"url": "http://localhost:3000/api/puestos/1",
+			"time": 12,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				12
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "4ba1a180-50d5-41c0-a25f-9f1a6d02e6e6",
+			"name": "Create Position",
+			"url": "http://localhost:3000/api/puestos",
+			"time": 24,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				24
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e60ae05a-3e6b-4909-afce-057b8fc86d38",
+			"name": "Update Position",
+			"url": "http://localhost:3000/api/puestos/1",
+			"time": 47,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				47
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "025b1222-0750-4611-9ec4-68b462fe252e",
+			"name": "Delete Position",
+			"url": "http://localhost:3000/api/puestos/1",
+			"time": 27,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				27
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "8d6ad1df-8523-4b81-9dc0-19ec2ac79d9c",
+			"name": "Get All Workers",
+			"url": "http://localhost:3000/api/trabajadores",
+			"time": 28,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				28
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9b8e64b2-f3cc-40c5-8721-5bc3089abeee",
+			"name": "Get Worker by ID",
+			"url": "http://localhost:3000/api/trabajadores/1",
+			"time": 10,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				10
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "434f67e6-4f1a-4f58-8559-b30d9ab2c268",
+			"name": "Create Worker",
+			"url": "http://localhost:3000/api/trabajadores",
+			"time": 42,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				42
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "50d5be18-a077-4b64-a018-694987397b33",
+			"name": "Update Worker",
+			"url": "http://localhost:3000/api/trabajadores/1",
+			"time": 23,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				23
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "060a43e8-78bb-4d68-b220-fa3b0a89b484",
+			"name": "Delete Worker",
+			"url": "http://localhost:3000/api/trabajadores/1",
+			"time": 34,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				34
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "862c3518-a491-4f01-a209-21f12cc1cdba",
+			"name": "Get All License Types",
+			"url": "http://localhost:3000/api/tipos-licencias",
+			"time": 34,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				34
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "62997142-9e20-4db7-88fc-40e0ee779e2f",
+			"name": "Get License Type by ID",
+			"url": "http://localhost:3000/api/tipos-licencias/1",
+			"time": 10,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				10
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "5aee1347-20f1-4c13-856e-fcd0b6130977",
+			"name": "Create License Type",
+			"url": "http://localhost:3000/api/tipos-licencias",
+			"time": 32,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				32
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9d4519b9-3423-4c2e-9948-049b20b14a82",
+			"name": "Update License Type",
+			"url": "http://localhost:3000/api/tipos-licencias/1",
+			"time": 53,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				53
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "ca2f7ecc-1190-4824-a3fc-fff7190e8da5",
+			"name": "Delete License Type",
+			"url": "http://localhost:3000/api/tipos-licencias/1",
+			"time": 27,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				27
+			],
+			"allTests": [
+				{}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 606,
+	"collection": {
+		"requests": [
+			{
+				"id": "e09f9618-d8c9-41b0-87b9-390a91a92e58",
+				"method": "GET"
+			},
+			{
+				"id": "6dde5099-9204-46d0-896a-25b95cd867e9",
+				"method": "GET"
+			},
+			{
+				"id": "4927ed4a-793a-4aa6-ade0-688aad91577a",
+				"method": "POST"
+			},
+			{
+				"id": "c8387436-111e-47f8-8a71-a4b11907c08a",
+				"method": "PUT"
+			},
+			{
+				"id": "e032106b-e2f1-4f3b-b3c8-241acacfe38b",
+				"method": "DELETE"
+			},
+			{
+				"id": "68cb8148-30fc-4660-9426-7e7fb0bc4b16",
+				"method": "GET"
+			},
+			{
+				"id": "824c5920-07bc-4523-823b-722fd3c7746d",
+				"method": "GET"
+			},
+			{
+				"id": "4ba1a180-50d5-41c0-a25f-9f1a6d02e6e6",
+				"method": "POST"
+			},
+			{
+				"id": "e60ae05a-3e6b-4909-afce-057b8fc86d38",
+				"method": "PUT"
+			},
+			{
+				"id": "025b1222-0750-4611-9ec4-68b462fe252e",
+				"method": "DELETE"
+			},
+			{
+				"id": "8d6ad1df-8523-4b81-9dc0-19ec2ac79d9c",
+				"method": "GET"
+			},
+			{
+				"id": "9b8e64b2-f3cc-40c5-8721-5bc3089abeee",
+				"method": "GET"
+			},
+			{
+				"id": "434f67e6-4f1a-4f58-8559-b30d9ab2c268",
+				"method": "POST"
+			},
+			{
+				"id": "50d5be18-a077-4b64-a018-694987397b33",
+				"method": "PUT"
+			},
+			{
+				"id": "060a43e8-78bb-4d68-b220-fa3b0a89b484",
+				"method": "DELETE"
+			},
+			{
+				"id": "862c3518-a491-4f01-a209-21f12cc1cdba",
+				"method": "GET"
+			},
+			{
+				"id": "62997142-9e20-4db7-88fc-40e0ee779e2f",
+				"method": "GET"
+			},
+			{
+				"id": "5aee1347-20f1-4c13-856e-fcd0b6130977",
+				"method": "POST"
+			},
+			{
+				"id": "9d4519b9-3423-4c2e-9948-049b20b14a82",
+				"method": "PUT"
+			},
+			{
+				"id": "ca2f7ecc-1190-4824-a3fc-fff7190e8da5",
+				"method": "DELETE"
+			}
+		]
+	}
+}

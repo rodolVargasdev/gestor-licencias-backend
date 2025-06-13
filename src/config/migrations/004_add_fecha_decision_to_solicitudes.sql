@@ -1,0 +1,1 @@
+ALTER TABLE solicitudes ADD COLUMN fecha_decision timestamp; 

@@ -1,0 +1,45 @@
+{
+  "name": "gestor-licencias-api",
+  "version": "1.0.0",
+  "description": "API para el sistema de gestión de licencias",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm migration:generate -- -d src/config/typeorm.config.js",
+    "migration:run": "npm run typeorm migration:run -- -d src/config/typeorm.config.js",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/config/typeorm.config.js",
+    "schema:sync": "npm run typeorm schema:sync -- -d src/config/typeorm.config.js"
+  },
+  "keywords": [
+    "licencias",
+    "api",
+    "express",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.15.30",
+    "axios": "^1.9.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "pdfkit": "^0.17.1",
+    "pg": "^8.16.0",
+    "reflect-metadata": "^0.2.2",
+    "ts-node": "^10.9.2",
+    "typeorm": "^0.3.24",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
