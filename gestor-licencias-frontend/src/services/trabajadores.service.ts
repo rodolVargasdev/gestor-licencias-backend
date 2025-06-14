@@ -3,30 +3,54 @@ import { API_ROUTES } from '../constants/api';
 import type { Trabajador, CreateTrabajadorDTO, UpdateTrabajadorDTO } from '../types/trabajador';
 
 export const trabajadoresService = {
-  getAll: () => api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BASE),
+  getAll: async (): Promise<Trabajador[]> => {
+    const response = await api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BASE);
+    return response.data;
+  },
   
-  getById: (id: number) => api.get<Trabajador>(API_ROUTES.TRABAJADORES.BY_ID(id)),
+  getById: async (id: number): Promise<Trabajador> => {
+    const response = await api.get<Trabajador>(API_ROUTES.TRABAJADORES.BY_ID(id));
+    return response.data;
+  },
   
-  create: (data: CreateTrabajadorDTO) => 
-    api.post<Trabajador>(API_ROUTES.TRABAJADORES.BASE, data),
+  create: async (data: CreateTrabajadorDTO): Promise<Trabajador> => {
+    const response = await api.post<Trabajador>(API_ROUTES.TRABAJADORES.BASE, data);
+    return response.data;
+  },
   
-  update: (id: number, data: UpdateTrabajadorDTO) => 
-    api.put<Trabajador>(API_ROUTES.TRABAJADORES.BY_ID(id), data),
+  update: async (id: number, data: UpdateTrabajadorDTO): Promise<Trabajador> => {
+    const response = await api.put<Trabajador>(API_ROUTES.TRABAJADORES.BY_ID(id), data);
+    return response.data;
+  },
   
-  delete: (id: number) => 
-    api.delete(API_ROUTES.TRABAJADORES.BY_ID(id)),
+  delete: async (id: number): Promise<void> => {
+    await api.delete(API_ROUTES.TRABAJADORES.BY_ID(id));
+  },
   
-  getByTipoPersonal: (tipoPersonal: 'OPERATIVO' | 'ADMINISTRATIVO') => 
-    api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BY_TIPO(tipoPersonal)),
+  getByTipoPersonal: async (tipoPersonal: 'OPERATIVO' | 'ADMINISTRATIVO'): Promise<Trabajador[]> => {
+    const response = await api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BY_TIPO(tipoPersonal));
+    return response.data;
+  },
   
-  getByDepartamento: (departamentoId: number) => 
-    api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BY_DEPARTAMENTO(departamentoId)),
+  getByDepartamento: async (departamentoId: number): Promise<Trabajador[]> => {
+    const response = await api.get<Trabajador[]>(API_ROUTES.TRABAJADORES.BY_DEPARTAMENTO(departamentoId));
+    return response.data;
+  },
   
-  getLicenciasActivas: (trabajadorId: number) => 
-    api.get(API_ROUTES.TRABAJADORES.LICENCIAS_ACTIVAS(trabajadorId)),
+  findByCodigo: async (codigo: string): Promise<Trabajador[]> => {
+    const response = await api.get<Trabajador[]>(`${API_ROUTES.TRABAJADORES.BASE}?codigo=${codigo}`);
+    return response.data;
+  },
   
-  getLicenciasPorPeriodo: (trabajadorId: number, fechaInicio: string, fechaFin: string) => 
-    api.get(API_ROUTES.TRABAJADORES.LICENCIAS_PERIODO(trabajadorId), {
+  getLicenciasActivas: async (trabajadorId: number) => {
+    const response = await api.get(API_ROUTES.TRABAJADORES.LICENCIAS_ACTIVAS(trabajadorId));
+    return response.data;
+  },
+  
+  getLicenciasPorPeriodo: async (trabajadorId: number, fechaInicio: string, fechaFin: string) => {
+    const response = await api.get(API_ROUTES.TRABAJADORES.LICENCIAS_PERIODO(trabajadorId), {
       params: { fechaInicio, fechaFin }
-    })
+    });
+    return response.data;
+  }
 }; 

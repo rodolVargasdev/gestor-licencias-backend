@@ -12,25 +12,24 @@ module.exports = new EntitySchema({
         trabajador_id: {
             type: 'int'
         },
-        fecha: {
-            type: 'date'
+        tipo_licencia_id: {
+            type: 'int'
         },
-        disponible: {
+        dias_disponibles: {
+            type: 'int',
+            default: 0
+        },
+        dias_usados: {
+            type: 'int',
+            default: 0
+        },
+        dias_restantes: {
+            type: 'int',
+            default: 0
+        },
+        activo: {
             type: 'boolean',
             default: true
-        },
-        motivo_no_disponible: {
-            type: 'varchar',
-            length: 500,
-            nullable: true
-        },
-        licencia_id: {
-            type: 'int',
-            nullable: true
-        },
-        solicitud_id: {
-            type: 'int',
-            nullable: true
         },
         fecha_creacion: {
             type: 'timestamp',
@@ -49,18 +48,11 @@ module.exports = new EntitySchema({
                 name: 'trabajador_id'
             }
         },
-        licencia: {
+        tipo_licencia: {
             type: 'many-to-one',
-            target: 'Licencia',
+            target: 'TipoLicencia',
             joinColumn: {
-                name: 'licencia_id'
-            }
-        },
-        solicitud: {
-            type: 'many-to-one',
-            target: 'Solicitud',
-            joinColumn: {
-                name: 'solicitud_id'
+                name: 'tipo_licencia_id'
             }
         }
     }

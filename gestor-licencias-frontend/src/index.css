@@ -58,7 +58,7 @@ body {
 
 /* Estilos para campos de formulario */
 .MuiTextField-root {
-  margin-bottom: 1rem;
+  /* margin-bottom: 1rem; */
 }
 
 /* Estilos para el layout */
@@ -69,6 +69,7 @@ body {
 /* Estilos para el contenido principal */
 .MuiBox-root {
   padding: 1rem;
+  margin-left: -70px;
 }
 
 /* Estilos para el encabezado */

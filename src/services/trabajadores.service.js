@@ -21,7 +21,7 @@ class TrabajadoresService {
     async findAll() {
         try {
             return await this.trabajadoresRepository.find({
-                relations: ['licencias']
+                relations: ['licencias', 'departamento', 'puesto']
             });
         } catch (error) {
             throw new Error(`Error al obtener los trabajadores: ${error.message}`);
@@ -32,7 +32,7 @@ class TrabajadoresService {
         try {
             const trabajador = await this.trabajadoresRepository.findOne({
                 where: { id },
-                relations: ['licencias']
+                relations: ['licencias', 'departamento', 'puesto']
             });
 
             if (!trabajador) {
@@ -68,7 +68,7 @@ class TrabajadoresService {
         try {
             return await this.trabajadoresRepository.find({
                 where: { tipo_personal: tipoPersonal },
-                relations: ['licencias']
+                relations: ['licencias', 'departamento', 'puesto']
             });
         } catch (error) {
             throw new Error(`Error al obtener los trabajadores por tipo: ${error.message}`);
@@ -79,7 +79,7 @@ class TrabajadoresService {
         try {
             return await this.trabajadoresRepository.find({
                 where: { departamento_id: departamentoId },
-                relations: ['licencias']
+                relations: ['licencias', 'departamento', 'puesto']
             });
         } catch (error) {
             throw new Error(`Error al obtener los trabajadores por departamento: ${error.message}`);

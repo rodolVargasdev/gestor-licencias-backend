@@ -21,11 +21,15 @@ import {
   DialogContentText,
   DialogActions,
   Snackbar,
-  Alert
+  Alert,
+  CircularProgress,
+  Chip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const PuestosPage: React.FC = () => {
   const dispatch = useDispatch();
@@ -36,7 +40,18 @@ const PuestosPage: React.FC = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
-    dispatch(fetchPuestos() as any);
+    const loadPuestos = async () => {
+      try {
+        await dispatch(fetchPuestos()).unwrap();
+      } catch (error) {
+        setSnackbar({ 
+          open: true, 
+          message: 'Error al cargar los puestos', 
+          severity: 'error' 
+        });
+      }
+    };
+    void loadPuestos();
   }, [dispatch]);
 
   const handleDeleteClick = (id: number) => {
@@ -47,7 +62,7 @@ const PuestosPage: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (selectedPuesto !== null) {
       try {
-        await dispatch(deletePuesto(selectedPuesto) as any).unwrap();
+        await dispatch(deletePuesto(selectedPuesto)).unwrap();
         setSnackbar({ open: true, message: 'Puesto eliminado correctamente', severity: 'success' });
       } catch {
         setSnackbar({ open: true, message: 'Error al eliminar el puesto', severity: 'error' });
@@ -58,6 +73,31 @@ const PuestosPage: React.FC = () => {
   };
 
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: es });
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -75,25 +115,45 @@ const PuestosPage: React.FC = () => {
                 <TableCell>ID</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Descripción</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Fecha Creación</TableCell>
+                <TableCell>Fecha Actualización</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {puestos.map((puesto) => (
-                <TableRow key={puesto.id}>
-                  <TableCell>{puesto.id}</TableCell>
-                  <TableCell>{puesto.nombre}</TableCell>
-                  <TableCell>{puesto.descripcion}</TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => navigate(`/puestos/editar/${puesto.id}`)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleDeleteClick(puesto.id)}>
-                      <DeleteIcon />
-                    </IconButton>
+              {Array.isArray(puestos) && puestos.length > 0 ? (
+                puestos.map((puesto) => (
+                  <TableRow key={puesto.id}>
+                    <TableCell>{puesto.id}</TableCell>
+                    <TableCell>{puesto.nombre}</TableCell>
+                    <TableCell>{puesto.descripcion || '-'}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={puesto.activo ? 'Activo' : 'Inactivo'} 
+                        color={puesto.activo ? 'success' : 'error'} 
+                        size="small" 
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(puesto.fecha_creacion)}</TableCell>
+                    <TableCell>{formatDate(puesto.fecha_actualizacion)}</TableCell>
+                    <TableCell>
+                      <IconButton color="primary" onClick={() => navigate(`/puestos/editar/${puesto.id}`)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => handleDeleteClick(puesto.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No hay puestos disponibles
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -113,8 +173,6 @@ const PuestosPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      {loading && <Typography>Cargando...</Typography>}
-      {error && <Typography color="error">{error}</Typography>}
     </Box>
   );
 };

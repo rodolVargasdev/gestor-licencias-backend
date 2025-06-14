@@ -30,6 +30,12 @@ const TipoLicencia = new EntitySchema({
             default: 'DIAS',
             nullable: false
         },
+        periodo_renovacion: {
+            type: 'enum',
+            enum: ['MENSUAL', 'ANUAL'],
+            default: 'ANUAL',
+            nullable: false
+        },
         duracion_maxima: {
             type: 'int',
             default: 0,

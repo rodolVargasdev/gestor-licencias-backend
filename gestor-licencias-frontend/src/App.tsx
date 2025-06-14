@@ -32,6 +32,7 @@ import LicenciasPage from './pages/Licencias/LicenciasPage';
 import CreateLicenciaPage from './pages/Licencias/CreateLicenciaPage';
 import EditLicenciaPage from './pages/Licencias/EditLicenciaPage';
 import LicenciaDetailsPage from './pages/Licencias/LicenciaDetailsPage';
+import DisponibilidadPage from "./pages/Disponibilidad/DisponibilidadPage";
 
 function App() {
   return (
@@ -84,6 +85,9 @@ function App() {
             <Route path="/licencias/nueva" element={<CreateLicenciaPage />} />
             <Route path="/licencias/:id" element={<LicenciaDetailsPage />} />
             <Route path="/licencias/:id/editar" element={<EditLicenciaPage />} />
+
+            {/* Rutas de Disponibilidad */}
+            <Route path="/disponibilidad" element={<DisponibilidadPage />} />
           </Routes>
         </Layout>
       </Router>

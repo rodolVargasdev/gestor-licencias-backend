@@ -4,6 +4,7 @@ export interface TipoLicencia {
   nombre: string;
   descripcion: string;
   tipo_duracion: 'DIAS' | 'HORAS' | 'CANTIDAD';
+  periodo_renovacion: 'MENSUAL' | 'ANUAL';
   duracion_maxima: number;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;
@@ -34,6 +35,7 @@ export interface CreateTipoLicenciaDTO {
   nombre: string;
   descripcion: string;
   tipo_duracion: 'DIAS' | 'HORAS' | 'CANTIDAD';
+  periodo_renovacion: 'MENSUAL' | 'ANUAL';
   duracion_maxima: number;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;

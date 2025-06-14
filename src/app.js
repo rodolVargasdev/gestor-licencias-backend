@@ -15,6 +15,7 @@ const licenciasRoutes = require('./routes/licencias.routes');
 const reportesRoutes = require('./routes/reportes.routes');
 const controlLimitesRoutes = require('./routes/control-limites.routes');
 const validacionesRoutes = require('./routes/validaciones.routes');
+const disponibilidadRoutes = require('./routes/disponibilidad.routes');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/licencias', licenciasRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/control-limites', controlLimitesRoutes);
 app.use('/api/validaciones', validacionesRoutes);
+app.use('/api/disponibilidad', disponibilidadRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

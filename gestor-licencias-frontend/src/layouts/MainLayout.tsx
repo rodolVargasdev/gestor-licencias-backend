@@ -21,7 +21,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SecurityIcon from '@mui/icons-material/Security';
 
-const drawerWidth = 240;
+const drawerWidth = 100;
 
 interface MainLayoutProps {
   children: React.ReactNode;

@@ -17,11 +17,10 @@ const initialState: TrabajadoresState = {
   error: null
 };
 
-export const fetchTrabajadores = createAsyncThunk(
+export const fetchTrabajadores = createAsyncThunk<Trabajador[]>(
   'trabajadores/fetchAll',
   async () => {
-    const response = await trabajadoresService.getAll();
-    return response.data;
+    return await trabajadoresService.getAll();
   }
 );
 
@@ -33,25 +32,23 @@ export const fetchTrabajadorById = createAsyncThunk(
   }
 );
 
-export const createTrabajador = createAsyncThunk(
+export const createTrabajador = createAsyncThunk<Trabajador, CreateTrabajadorDTO>(
   'trabajadores/create',
-  async (data: CreateTrabajadorDTO) => {
-    const response = await trabajadoresService.create(data);
-    return response.data;
+  async (data) => {
+    return await trabajadoresService.create(data);
   }
 );
 
-export const updateTrabajador = createAsyncThunk(
+export const updateTrabajador = createAsyncThunk<Trabajador, { id: number; data: UpdateTrabajadorDTO }>(
   'trabajadores/update',
-  async ({ id, data }: { id: number; data: UpdateTrabajadorDTO }) => {
-    const response = await trabajadoresService.update(id, data);
-    return response.data;
+  async ({ id, data }) => {
+    return await trabajadoresService.update(id, data);
   }
 );
 
-export const deleteTrabajador = createAsyncThunk(
+export const deleteTrabajador = createAsyncThunk<number, number>(
   'trabajadores/delete',
-  async (id: number) => {
+  async (id) => {
     await trabajadoresService.delete(id);
     return id;
   }
@@ -78,7 +75,7 @@ const trabajadoresSlice = createSlice({
       })
       .addCase(fetchTrabajadores.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Error al cargar trabajadores';
+        state.error = action.error.message || 'Error al cargar los trabajadores';
       })
       // Fetch by ID
       .addCase(fetchTrabajadorById.pending, (state) => {
@@ -104,7 +101,7 @@ const trabajadoresSlice = createSlice({
       })
       .addCase(createTrabajador.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Error al crear trabajador';
+        state.error = action.error.message || 'Error al crear el trabajador';
       })
       // Update
       .addCase(updateTrabajador.pending, (state) => {
@@ -117,11 +114,10 @@ const trabajadoresSlice = createSlice({
         if (index !== -1) {
           state.items[index] = action.payload;
         }
-        state.selectedTrabajador = action.payload;
       })
       .addCase(updateTrabajador.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Error al actualizar trabajador';
+        state.error = action.error.message || 'Error al actualizar el trabajador';
       })
       // Delete
       .addCase(deleteTrabajador.pending, (state) => {
@@ -137,7 +133,7 @@ const trabajadoresSlice = createSlice({
       })
       .addCase(deleteTrabajador.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Error al eliminar trabajador';
+        state.error = action.error.message || 'Error al eliminar el trabajador';
       });
   }
 });

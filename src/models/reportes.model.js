@@ -8,6 +8,7 @@ class Reportes {
                 't.codigo_trabajador',
                 't.nombre_completo',
                 'tl.nombre as tipo_licencia',
+                'tl.periodo_renovacion',
                 'tl.dias_anuales',
                 'tl.horas_anuales',
                 'tl.dias_por_evento',
@@ -20,7 +21,7 @@ class Reportes {
             .innerJoin('tipos_licencias', 'tl', 'tl.id = :tipoLicenciaId', { tipoLicenciaId })
             .leftJoin('control_limites', 'cl', 'cl.trabajador_id = t.id AND cl.tipo_licencia_id = tl.id AND cl.anio = :anio AND (:mes IS NULL OR cl.mes = :mes)', { anio, mes })
             .where('t.codigo_trabajador = :codigoTrabajador', { codigoTrabajador })
-            .groupBy('t.codigo_trabajador, t.nombre_completo, tl.nombre, tl.dias_anuales, tl.horas_anuales, tl.dias_por_evento, tl.unidad_tiempo');
+            .groupBy('t.codigo_trabajador, t.nombre_completo, tl.nombre, tl.periodo_renovacion, tl.dias_anuales, tl.horas_anuales, tl.dias_por_evento, tl.unidad_tiempo');
 
         const result = await queryBuilder.getRawOne();
         if (result) {
@@ -155,6 +156,7 @@ class Reportes {
                 't.nombre_completo',
                 'd.nombre as departamento',
                 'tl.nombre as tipo_licencia',
+                'tl.periodo_renovacion',
                 'tl.dias_anuales',
                 'tl.horas_anuales',
                 'tl.dias_por_evento',
@@ -167,7 +169,7 @@ class Reportes {
             .innerJoin('departamentos', 'd', 't.departamento_id = d.id')
             .innerJoin('tipos_licencias', 'tl', 'tl.activo = true')
             .leftJoin('control_limites', 'cl', 'cl.trabajador_id = t.id AND cl.tipo_licencia_id = tl.id AND cl.anio = :anio AND (:mes IS NULL OR cl.mes = :mes)', { anio, mes })
-            .groupBy('t.codigo_trabajador, t.nombre_completo, d.nombre, tl.nombre, tl.dias_anuales, tl.horas_anuales, tl.dias_por_evento, tl.unidad_tiempo')
+            .groupBy('t.codigo_trabajador, t.nombre_completo, d.nombre, tl.nombre, tl.periodo_renovacion, tl.dias_anuales, tl.horas_anuales, tl.dias_por_evento, tl.unidad_tiempo')
             .orderBy('d.nombre, t.nombre_completo, tl.nombre');
 
         const results = await queryBuilder.getRawMany();

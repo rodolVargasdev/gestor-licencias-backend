@@ -7,6 +7,7 @@ import { fetchTrabajadores } from '../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../store/slices/tiposLicenciasSlice';
 import { fetchValidaciones } from '../store/slices/validacionesSlice';
 import { fetchLicencias } from '../store/slices/licenciasSlice';
+import { fetchDisponibilidadByAnio } from '../store/slices/disponibilidadSlice';
 import {
   Box,
   Grid,
@@ -20,7 +21,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EventNoteIcon from '@mui/icons-material/EventNote';
-import SettingsIcon from '@mui/icons-material/Settings';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import type { Licencia } from '../types/licencia';
 
 const Dashboard: React.FC = () => {
@@ -32,6 +33,7 @@ const Dashboard: React.FC = () => {
   const tiposLicencias = useSelector((state: RootState) => state.tiposLicencias.items);
   const validaciones = useSelector((state: RootState) => state.validaciones.items);
   const licencias = useSelector((state: RootState) => (state.licencias as { items: Licencia[] }).items);
+  const disponibilidad = useSelector((state: RootState) => state.disponibilidad.items);
 
   useEffect(() => {
     dispatch(fetchDepartamentos());
@@ -39,6 +41,7 @@ const Dashboard: React.FC = () => {
     dispatch(fetchTiposLicencias());
     dispatch(fetchValidaciones());
     dispatch(fetchLicencias());
+    dispatch(fetchDisponibilidadByAnio(new Date().getFullYear()));
   }, [dispatch]);
 
   const menuItems = [
@@ -78,11 +81,11 @@ const Dashboard: React.FC = () => {
       color: '#d32f2f'
     },
     {
-      title: 'Configuración',
-      count: 0,
-      icon: <SettingsIcon sx={{ fontSize: 40 }} />,
-      path: '/configuracion',
-      color: '#0288d1'
+      title: 'Disponibilidad',
+      count: disponibilidad.length,
+      icon: <AccessTimeIcon sx={{ fontSize: 40 }} />,
+      path: '/disponibilidad',
+      color: '#7b1fa2'
     }
   ];
 
@@ -91,27 +94,48 @@ const Dashboard: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
-      <Grid container spacing={3}>
+      {/* Tarjetas de resumen */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         {menuItems.map((item) => (
           <Grid item xs={12} sm={6} md={4} key={item.title}>
-            <Card>
-              <CardActionArea onClick={() => navigate(item.path)}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Box
-                      sx={{
-                        backgroundColor: item.color,
-                        borderRadius: '50%',
-                        p: 1,
-                        mr: 2,
-                        color: 'white'
-                      }}
-                    >
-                      {item.icon}
-                    </Box>
-                    <Typography variant="h6">{item.title}</Typography>
+            <Card
+              sx={{
+                borderRadius: 3,
+                boxShadow: 3,
+                transition: 'box-shadow 0.3s',
+                '&:hover': {
+                  boxShadow: 8,
+                },
+                bgcolor: '#f8f9fa',
+                minHeight: 180,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mb: 2
+              }}
+            >
+              <CardActionArea onClick={() => navigate(item.path)} sx={{ height: '100%' }}>
+                <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 140 }}>
+                  <Box
+                    sx={{
+                      backgroundColor: item.color,
+                      borderRadius: '50%',
+                      p: 1.5,
+                      mb: 2,
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 2
+                    }}
+                  >
+                    {item.icon}
                   </Box>
-                  <Typography variant="h4" align="center">
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, textAlign: 'center', mb: 1, fontSize: 18, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="h3" align="center" sx={{ fontWeight: 700, color: item.color, fontSize: 40 }}>
                     {item.count}
                   </Typography>
                 </CardContent>

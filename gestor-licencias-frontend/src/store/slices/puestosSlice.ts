@@ -14,7 +14,7 @@ const initialState: PuestosState = {
   error: null,
 };
 
-export const fetchPuestos = createAsyncThunk(
+export const fetchPuestos = createAsyncThunk<Puesto[]>(
   'puestos/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
@@ -25,9 +25,9 @@ export const fetchPuestos = createAsyncThunk(
   }
 );
 
-export const createPuesto = createAsyncThunk(
+export const createPuesto = createAsyncThunk<Puesto, CreatePuestoDTO>(
   'puestos/create',
-  async (dto: CreatePuestoDTO, { rejectWithValue }) => {
+  async (dto, { rejectWithValue }) => {
     try {
       return await puestosService.create(dto);
     } catch (error: unknown) {
@@ -36,9 +36,9 @@ export const createPuesto = createAsyncThunk(
   }
 );
 
-export const updatePuesto = createAsyncThunk(
+export const updatePuesto = createAsyncThunk<Puesto, { id: number; dto: UpdatePuestoDTO }>(
   'puestos/update',
-  async ({ id, dto }: { id: number; dto: UpdatePuestoDTO }, { rejectWithValue }) => {
+  async ({ id, dto }, { rejectWithValue }) => {
     try {
       return await puestosService.update(id, dto);
     } catch (error: unknown) {
@@ -47,9 +47,9 @@ export const updatePuesto = createAsyncThunk(
   }
 );
 
-export const deletePuesto = createAsyncThunk(
+export const deletePuesto = createAsyncThunk<number, number>(
   'puestos/delete',
-  async (id: number, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
       await puestosService.delete(id);
       return id;
@@ -62,7 +62,11 @@ export const deletePuesto = createAsyncThunk(
 const puestosSlice = createSlice({
   name: 'puestos',
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPuestos.pending, (state) => {
@@ -72,6 +76,7 @@ const puestosSlice = createSlice({
       .addCase(fetchPuestos.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
+        state.error = null;
       })
       .addCase(fetchPuestos.rejected, (state, action) => {
         state.loading = false;
@@ -79,15 +84,19 @@ const puestosSlice = createSlice({
       })
       .addCase(createPuesto.fulfilled, (state, action) => {
         state.items.push(action.payload);
+        state.error = null;
       })
       .addCase(updatePuesto.fulfilled, (state, action) => {
         const idx = state.items.findIndex((d) => d.id === action.payload.id);
         if (idx !== -1) state.items[idx] = action.payload;
+        state.error = null;
       })
       .addCase(deletePuesto.fulfilled, (state, action) => {
         state.items = state.items.filter((d) => d.id !== action.payload);
+        state.error = null;
       });
   },
 });
 
+export const { clearError } = puestosSlice.actions;
 export default puestosSlice.reducer; 

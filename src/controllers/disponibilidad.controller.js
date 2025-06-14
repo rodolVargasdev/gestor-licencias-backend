@@ -92,6 +92,24 @@ class DisponibilidadController {
             res.status(400).json({ message: error.message });
         }
     }
+
+    async findByAnio(req, res) {
+        try {
+            const disponibilidades = await disponibilidadService.findByAnio(req.params.anio);
+            res.json(disponibilidades);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async findByCodigoTrabajador(req, res) {
+        try {
+            const disponibilidades = await disponibilidadService.findByCodigoTrabajador(req.params.codigo);
+            res.json(disponibilidades);
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
 }
 
 module.exports = new DisponibilidadController(); 

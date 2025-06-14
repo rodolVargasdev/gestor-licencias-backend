@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { createTrabajador } from '../../store/slices/trabajadoresSlice';
+import { fetchDepartamentos } from '../../store/slices/departamentosSlice';
+import { fetchPuestos } from '../../store/slices/puestosSlice';
+import type { RootState } from '../../store';
+import type { CreateTrabajadorDTO } from '../../types/trabajador';
 import { 
   Box, 
   Button, 
@@ -14,52 +18,54 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText
+  FormHelperText,
+  CircularProgress
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import esLocale from 'date-fns/locale/es';
+import { es } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 const CreateTrabajadorPage: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const departamentos = useSelector((state: RootState) => state.departamentos.items);
+  const puestos = useSelector((state: RootState) => state.puestos.items);
+  const loading = useSelector((state: RootState) => state.puestos.loading);
+
+  const [formData, setFormData] = useState<CreateTrabajadorDTO>({
     codigo: '',
     nombre_completo: '',
     email: '',
     telefono: '',
-    departamento_id: '',
-    puesto_id: '',
-    tipo_personal: '',
-    fecha_ingreso: null as Date | null,
+    departamento_id: 0,
+    puesto_id: 0,
+    tipo_personal: 'OPERATIVO',
+    fecha_ingreso: format(new Date(), 'yyyy-MM-dd'),
     activo: true
   });
-  const [departamentos, setDepartamentos] = useState([]);
-  const [puestos, setPuestos] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Fetch departamentos and puestos
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
-        const [departamentosRes, puestosRes] = await Promise.all([
-          fetch('http://localhost:3000/api/departamentos'),
-          fetch('http://localhost:3000/api/puestos')
+        await Promise.all([
+          dispatch(fetchDepartamentos()).unwrap(),
+          dispatch(fetchPuestos()).unwrap()
         ]);
-        const [departamentosData, puestosData] = await Promise.all([
-          departamentosRes.json(),
-          puestosRes.json()
-        ]);
-        setDepartamentos(departamentosData);
-        setPuestos(puestosData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        setSnackbar({ 
+          open: true, 
+          message: 'Error al cargar los datos necesarios', 
+          severity: 'error' 
+        });
       }
     };
-    fetchData();
-  }, []);
+    void loadData();
+  }, [dispatch]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -85,30 +91,40 @@ const CreateTrabajadorPage: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await dispatch(createTrabajador(formData) as any).unwrap();
+      await dispatch(createTrabajador(formData)).unwrap();
       setSnackbar({ open: true, message: 'Trabajador creado correctamente', severity: 'success' });
       setTimeout(() => navigate('/trabajadores'), 1000);
-    } catch (error) {
+    } catch {
       setSnackbar({ open: true, message: 'Error al crear el trabajador', severity: 'error' });
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleChange = (e: SelectChangeEvent<string> | React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name as string]: value
+      [name]: value
     }));
   };
 
   const handleDateChange = (date: Date | null) => {
-    setFormData(prev => ({
-      ...prev,
-      fecha_ingreso: date
-    }));
+    if (date) {
+      setFormData(prev => ({
+        ...prev,
+        fecha_ingreso: format(date, 'yyyy-MM-dd')
+      }));
+    }
   };
 
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box maxWidth={800} mx="auto">
@@ -161,12 +177,12 @@ const CreateTrabajadorPage: React.FC = () => {
             <InputLabel>Departamento</InputLabel>
             <Select
               name="departamento_id"
-              value={formData.departamento_id}
+              value={formData.departamento_id.toString()}
               onChange={handleChange}
               label="Departamento"
             >
-              {departamentos.map((depto: any) => (
-                <MenuItem key={depto.id} value={depto.id}>
+              {Array.isArray(departamentos) && departamentos.map((depto) => (
+                <MenuItem key={depto.id} value={depto.id.toString()}>
                   {depto.nombre}
                 </MenuItem>
               ))}
@@ -177,12 +193,12 @@ const CreateTrabajadorPage: React.FC = () => {
             <InputLabel>Puesto</InputLabel>
             <Select
               name="puesto_id"
-              value={formData.puesto_id}
+              value={formData.puesto_id.toString()}
               onChange={handleChange}
               label="Puesto"
             >
-              {puestos.map((puesto: any) => (
-                <MenuItem key={puesto.id} value={puesto.id}>
+              {Array.isArray(puestos) && puestos.map((puesto) => (
+                <MenuItem key={puesto.id} value={puesto.id.toString()}>
                   {puesto.nombre}
                 </MenuItem>
               ))}
@@ -202,10 +218,10 @@ const CreateTrabajadorPage: React.FC = () => {
             </Select>
             {errors.tipo_personal && <FormHelperText>{errors.tipo_personal}</FormHelperText>}
           </FormControl>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={esLocale}>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
             <DatePicker
               label="Fecha de Ingreso"
-              value={formData.fecha_ingreso}
+              value={formData.fecha_ingreso ? new Date(formData.fecha_ingreso) : null}
               onChange={handleDateChange}
               slotProps={{
                 textField: {
