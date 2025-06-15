@@ -8,15 +8,9 @@ import Dashboard from './pages/Dashboard';
 import TiposLicenciasPage from './pages/TiposLicencias/TiposLicenciasPage';
 import CreateTipoLicenciaPage from './pages/TiposLicencias/CreateTipoLicenciaPage';
 import EditTipoLicenciaPage from './pages/TiposLicencias/EditTipoLicenciaPage';
-import ControlLimitesPage from './pages/ControlLimites/ControlLimitesPage';
-import CreateControlLimitePage from './pages/ControlLimites/CreateControlLimitePage';
-import EditControlLimitePage from './pages/ControlLimites/EditControlLimitePage';
 import TrabajadoresPage from './pages/Trabajadores/TrabajadoresPage';
 import CreateTrabajadorPage from './pages/Trabajadores/CreateTrabajadorPage';
 import EditTrabajadorPage from './pages/Trabajadores/EditTrabajadorPage';
-import ValidacionesPage from './pages/Validaciones/ValidacionesPage';
-import CreateValidacionPage from './pages/Validaciones/CreateValidacionPage';
-import EditValidacionPage from './pages/Validaciones/EditValidacionPage';
 import DepartamentosPage from './pages/Departamentos/DepartamentosPage';
 import CreateDepartamentoPage from './pages/Departamentos/CreateDepartamentoPage';
 import EditDepartamentoPage from './pages/Departamentos/EditDepartamentoPage';
@@ -48,20 +42,16 @@ function App() {
             <Route path="/tipos-licencias/nuevo" element={<CreateTipoLicenciaPage />} />
             <Route path="/tipos-licencias/editar/:id" element={<EditTipoLicenciaPage />} />
             
-            {/* Rutas de Control de Límites */}
-            <Route path="/control-limites" element={<ControlLimitesPage />} />
-            <Route path="/control-limites/nuevo" element={<CreateControlLimitePage />} />
-            <Route path="/control-limites/editar/:id" element={<EditControlLimitePage />} />
-            
             {/* Rutas de Trabajadores */}
             <Route path="/trabajadores" element={<TrabajadoresPage />} />
             <Route path="/trabajadores/nuevo" element={<CreateTrabajadorPage />} />
             <Route path="/trabajadores/editar/:id" element={<EditTrabajadorPage />} />
             
             {/* Rutas de Validaciones */}
-            <Route path="/validaciones" element={<ValidacionesPage />} />
-            <Route path="/validaciones/nueva" element={<CreateValidacionPage />} />
-            <Route path="/validaciones/editar/:id" element={<EditValidacionPage />} />
+            {/* Rutas deshabilitadas por simplificación del flujo */}
+            {/* <Route path="/validaciones" element={<ValidacionesPage />} /> */}
+            {/* <Route path="/validaciones/nueva" element={<CreateValidacionPage />} /> */}
+            {/* <Route path="/validaciones/editar/:id" element={<EditValidacionPage />} /> */}
             
             {/* Rutas de Departamentos */}
             <Route path="/departamentos" element={<DepartamentosPage />} />
@@ -88,6 +78,12 @@ function App() {
 
             {/* Rutas de Disponibilidad */}
             <Route path="/disponibilidad" element={<DisponibilidadPage />} />
+
+            {/* Rutas de Solicitudes */}
+            {/* Rutas deshabilitadas por simplificación del flujo */}
+            {/* <Route path="/solicitudes" element={<SolicitudesPage />} /> */}
+            {/* <Route path="/solicitudes/crear" element={<CreateSolicitudPage />} /> */}
+            {/* <Route path="/solicitudes/editar/:id" element={<EditSolicitudPage />} /> */}
           </Routes>
         </Layout>
       </Router>

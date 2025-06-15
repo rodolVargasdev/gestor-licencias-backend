@@ -23,7 +23,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+// import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -54,7 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Tipos de Licencias', icon: <AssignmentIcon />, path: '/tipos-licencias' },
     { text: 'Departamentos', icon: <BusinessIcon />, path: '/departamentos' },
     { text: 'Puestos', icon: <WorkIcon />, path: '/puestos' },
-    { text: 'Validaciones', icon: <CheckCircleIcon />, path: '/validaciones' },
+    // { text: 'Validaciones', icon: <CheckCircleIcon />, path: '/validaciones' },
     { text: 'Configuración', icon: <SettingsIcon />, path: '/configuracion' }
   ];
 
@@ -120,7 +120,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: open ? drawerWidth : 0 }, flexShrink: { sm: 0 } }}
+        sx={{ width: { sm: open ? drawerWidth : 10 }, flexShrink: { sm: 0 } }}
       >
         {isMobile ? (
           <Drawer

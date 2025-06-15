@@ -5,8 +5,8 @@ import trabajadoresReducer from './slices/trabajadoresSlice';
 import tiposLicenciasReducer from './slices/tiposLicenciasSlice';
 import validacionesReducer from './slices/validacionesSlice';
 import licenciasReducer from './slices/licenciasSlice';
-import controlLimitesReducer from './slices/controlLimitesSlice';
 import disponibilidadReducer from './slices/disponibilidadSlice';
+import solicitudesReducer from './slices/solicitudesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,8 +16,8 @@ export const store = configureStore({
     tiposLicencias: tiposLicenciasReducer,
     validaciones: validacionesReducer,
     licencias: licenciasReducer,
-    controlLimites: controlLimitesReducer,
-    disponibilidad: disponibilidadReducer
+    disponibilidad: disponibilidadReducer,
+    solicitudes: solicitudesReducer,
   }
 });
 

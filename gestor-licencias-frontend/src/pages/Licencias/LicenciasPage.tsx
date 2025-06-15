@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import type { RootState } from '../../store';
-import { fetchLicencias, deleteLicencia } from '../../store/slices/licenciasSlice';
+import type { RootState, AppDispatch } from '../../store';
+import { fetchSolicitudes, deleteSolicitud } from '../../store/slices/solicitudesSlice';
+import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
+import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
 import {
   Box,
   Button,
@@ -22,7 +24,6 @@ import {
   Snackbar,
   Alert,
   Chip,
-  Tooltip,
   Paper
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -31,34 +32,39 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import type { Solicitud } from '../../types/solicitud';
 
 const LicenciasPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { items: licencias, loading, error } = useSelector((state: RootState) => state.licencias);
+  const { items: solicitudes, loading, error } = useSelector((state: RootState) => state.solicitudes);
+  const { items: trabajadores } = useSelector((state: RootState) => state.trabajadores);
+  const { items: tiposLicencias } = useSelector((state: RootState) => state.tiposLicencias);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedLicencia, setSelectedLicencia] = useState<number | null>(null);
+  const [selectedSolicitud, setSelectedSolicitud] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
-    dispatch(fetchLicencias());
+    dispatch(fetchSolicitudes());
+    dispatch(fetchTrabajadores());
+    dispatch(fetchTiposLicencias());
   }, [dispatch]);
 
   const handleDeleteClick = (id: number) => {
-    setSelectedLicencia(id);
+    setSelectedSolicitud(id);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (selectedLicencia !== null) {
+    if (selectedSolicitud !== null) {
       try {
-        await dispatch(deleteLicencia(selectedLicencia));
-        setSnackbar({ open: true, message: 'Licencia eliminada correctamente', severity: 'success' });
+        await dispatch(deleteSolicitud(selectedSolicitud));
+        setSnackbar({ open: true, message: 'Solicitud eliminada correctamente', severity: 'success' });
       } catch {
-        setSnackbar({ open: true, message: 'Error al eliminar la licencia', severity: 'error' });
+        setSnackbar({ open: true, message: 'Error al eliminar la solicitud', severity: 'error' });
       }
       setDeleteDialogOpen(false);
-      setSelectedLicencia(null);
+      setSelectedSolicitud(null);
     }
   };
 
@@ -66,11 +72,11 @@ const LicenciasPage: React.FC = () => {
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case 'ACTIVA':
+      case 'APROBADA':
         return 'success';
-      case 'CANCELADA':
+      case 'RECHAZADA':
         return 'error';
-      case 'FINALIZADA':
+      case 'PENDIENTE':
         return 'info';
       default:
         return 'default';
@@ -79,6 +85,16 @@ const LicenciasPage: React.FC = () => {
 
   const formatDate = (date: string) => {
     return format(new Date(date), 'dd/MM/yyyy', { locale: es });
+  };
+
+  const getTrabajadorNombre = (id: number) => {
+    const trabajador = trabajadores.find(t => t.id === id);
+    return trabajador ? trabajador.nombre_completo : id;
+  };
+
+  const getTipoLicenciaNombre = (id: number) => {
+    const tipo = tiposLicencias.find(t => t.id === id);
+    return tipo ? tipo.nombre : id;
   };
 
   if (loading) {
@@ -112,47 +128,45 @@ const LicenciasPage: React.FC = () => {
               <TableCell>Tipo de Licencia</TableCell>
               <TableCell>Fecha Inicio</TableCell>
               <TableCell>Fecha Fin</TableCell>
-              <TableCell>Días</TableCell>
+              <TableCell>Motivo</TableCell>
               <TableCell>Estado</TableCell>
+              <TableCell>Fecha de Solicitud</TableCell>
               <TableCell>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {licencias.map((licencia) => (
-              <TableRow key={licencia.id}>
-                <TableCell>{licencia.id}</TableCell>
-                <TableCell>{licencia.trabajador?.nombre_completo}</TableCell>
-                <TableCell>{licencia.tipo_licencia?.nombre}</TableCell>
-                <TableCell>{formatDate(licencia.fecha_inicio)}</TableCell>
-                <TableCell>{formatDate(licencia.fecha_fin)}</TableCell>
-                <TableCell>
-                  <Tooltip title={`${licencia.dias_habiles} días hábiles / ${licencia.dias_calendario} días calendario`}>
-                    <span>{licencia.dias_totales}</span>
-                  </Tooltip>
-                </TableCell>
+            {solicitudes.map((solicitud: Solicitud) => (
+              <TableRow key={solicitud.id}>
+                <TableCell>{solicitud.id}</TableCell>
+                <TableCell>{getTrabajadorNombre(solicitud.trabajador_id)}</TableCell>
+                <TableCell>{getTipoLicenciaNombre(solicitud.tipo_licencia_id)}</TableCell>
+                <TableCell>{solicitud.fecha_inicio ? formatDate(solicitud.fecha_inicio) : '-'}</TableCell>
+                <TableCell>{solicitud.fecha_fin ? formatDate(solicitud.fecha_fin) : '-'}</TableCell>
+                <TableCell>{solicitud.motivo}</TableCell>
                 <TableCell>
                   <Chip
-                    label={licencia.estado}
-                    color={getEstadoColor(licencia.estado) as any}
+                    label={solicitud.estado}
+                    color={getEstadoColor(solicitud.estado) as 'success' | 'error' | 'info' | 'default'}
                     size="small"
                   />
                 </TableCell>
+                <TableCell>{solicitud.fecha_solicitud ? formatDate(solicitud.fecha_solicitud) : '-'}</TableCell>
                 <TableCell>
                   <IconButton
                     size="small"
-                    onClick={() => navigate(`/licencias/${licencia.id}`)}
+                    onClick={() => navigate(`/licencias/${solicitud.id}`)}
                   >
                     <InfoIcon />
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => navigate(`/licencias/${licencia.id}/editar`)}
+                    onClick={() => navigate(`/licencias/${solicitud.id}/editar`)}
                   >
                     <EditIcon />
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => handleDeleteClick(licencia.id)}
+                    onClick={() => handleDeleteClick(solicitud.id!)}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -170,7 +184,7 @@ const LicenciasPage: React.FC = () => {
         <DialogTitle>Confirmar Eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Está seguro que desea eliminar esta licencia? Esta acción no se puede deshacer.
+            ¿Está seguro que desea eliminar esta solicitud? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

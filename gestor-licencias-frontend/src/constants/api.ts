@@ -30,7 +30,8 @@ export const API_ROUTES = {
   // Solicitudes
   SOLICITUDES: {
     BASE: '/api/solicitudes',
-    BY_ID: (id: number) => `/api/solicitudes/${id}`
+    BY_ID: (id: number) => `/api/solicitudes/${id}`,
+    BY_TRABAJADOR: (trabajadorId: number) => `/api/solicitudes/trabajador/${trabajadorId}`,
   },
 
   // Licencias
@@ -96,5 +97,10 @@ export const API_ROUTES = {
       fechaInicio: string,
       fechaFin: string
     ) => `/api/validaciones/tipo-licencia/${tipoLicenciaId}/trabajador/${trabajadorId}/estado/${estado}/rango-fechas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+  },
+
+  DISPONIBILIDAD: {
+    BASE: '/api/disponibilidad',
+    BY_ID: (id: number) => `/api/disponibilidad/${id}`
   }
 }; 

@@ -80,11 +80,6 @@ module.exports = new EntitySchema({
             type: 'one-to-many',
             target: 'Solicitud',
             inverseSide: 'trabajador'
-        },
-        limites: {
-            type: 'one-to-many',
-            target: 'ControlLimite',
-            inverseSide: 'trabajador'
         }
     }
 }); 

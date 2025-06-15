@@ -6,16 +6,15 @@ const { AppDataSource } = require('./config/database');
 require('dotenv').config();
 
 // Importar rutas
-const departamentosRoutes = require('./routes/departamentos.routes');
-const puestosRoutes = require('./routes/puestos.routes');
 const trabajadoresRoutes = require('./routes/trabajadores.routes');
 const tiposLicenciasRoutes = require('./routes/tipos-licencias.routes');
 const solicitudesRoutes = require('./routes/solicitudes.routes');
-const licenciasRoutes = require('./routes/licencias.routes');
-const reportesRoutes = require('./routes/reportes.routes');
-const controlLimitesRoutes = require('./routes/control-limites.routes');
 const validacionesRoutes = require('./routes/validaciones.routes');
+const licenciasRoutes = require('./routes/licencias.routes');
 const disponibilidadRoutes = require('./routes/disponibilidad.routes');
+const reportesRoutes = require('./routes/reportes.routes');
+const departamentosRoutes = require('./routes/departamentos.routes');
+const puestosRoutes = require('./routes/puestos.routes');
 
 const app = express();
 
@@ -35,16 +34,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rutas
-app.use('/api/departamentos', departamentosRoutes);
-app.use('/api/puestos', puestosRoutes);
 app.use('/api/trabajadores', trabajadoresRoutes);
 app.use('/api/tipos-licencias', tiposLicenciasRoutes);
 app.use('/api/solicitudes', solicitudesRoutes);
-app.use('/api/licencias', licenciasRoutes);
-app.use('/api/reportes', reportesRoutes);
-app.use('/api/control-limites', controlLimitesRoutes);
 app.use('/api/validaciones', validacionesRoutes);
+app.use('/api/licencias', licenciasRoutes);
 app.use('/api/disponibilidad', disponibilidadRoutes);
+app.use('/api/reportes', reportesRoutes);
+app.use('/api/departamentos', departamentosRoutes);
+app.use('/api/puestos', puestosRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {

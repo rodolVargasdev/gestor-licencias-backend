@@ -201,26 +201,26 @@ const EditTipoLicenciaPage: React.FC = () => {
                   helperText={errors.codigo}
                   sx={{ flex: 1 }}
                 />
-                <TextField
+          <TextField
                   name="nombre"
-                  label="Nombre"
+            label="Nombre"
                   value={formData.nombre}
                   onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!errors.nombre}
-                  helperText={errors.nombre}
+            fullWidth
+            required
+            error={!!errors.nombre}
+            helperText={errors.nombre}
                   sx={{ flex: 2 }}
-                />
+          />
               </Stack>
-              <TextField
+          <TextField
                 name="descripcion"
-                label="Descripción"
+            label="Descripción"
                 value={formData.descripcion}
                 onChange={handleChange}
-                fullWidth
+            fullWidth
                 required
-                multiline
+            multiline
                 rows={3}
                 error={!!errors.descripcion}
                 helperText={errors.descripcion}
@@ -258,18 +258,18 @@ const EditTipoLicenciaPage: React.FC = () => {
                     <MenuItem value="ANUAL">Anual</MenuItem>
                   </Select>
                 </FormControl>
-                <TextField
+          <TextField
                   name="duracion_maxima"
                   label={`Duración Máxima (${formData.tipo_duracion.toLowerCase()})`}
                   type="number"
                   value={formData.duracion_maxima}
                   onChange={handleChange}
-                  fullWidth
-                  required
+            fullWidth
+            required
                   error={!!errors.duracion_maxima}
                   helperText={errors.duracion_maxima}
-                  inputProps={{ min: 1 }}
-                />
+            inputProps={{ min: 1 }}
+          />
               </Stack>
             </Box>
 
@@ -481,7 +481,7 @@ const EditTipoLicenciaPage: React.FC = () => {
               >
                 Guardar Cambios
               </Button>
-            </Box>
+          </Box>
           </Stack>
         </form>
       </Paper>

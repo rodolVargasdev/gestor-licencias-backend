@@ -12,8 +12,17 @@ class TrabajadoresController {
 
     async findAll(req, res) {
         try {
-            const trabajadores = await trabajadoresService.findAll();
-            res.json(trabajadores);
+            if (req.query.codigo) {
+                const trabajador = await trabajadoresService.findByCodigo(req.query.codigo);
+                if (trabajador) {
+                    res.json([trabajador]);
+                } else {
+                    res.json([]);
+                }
+            } else {
+                const trabajadores = await trabajadoresService.findAll();
+                res.json(trabajadores);
+            }
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

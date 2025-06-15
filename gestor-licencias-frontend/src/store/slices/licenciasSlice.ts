@@ -26,9 +26,22 @@ export const fetchLicencias = createAsyncThunk(
 
 export const fetchLicenciaById = createAsyncThunk(
   'licencias/fetchLicenciaById',
-  async (id: number) => {
-    const response = await licenciasService.getById(id);
-    return response.data;
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response = await licenciasService.getById(id);
+      return response.data;
+    } catch {
+      // Si no se encuentra por ID, intentar buscar por solicitud
+      try {
+        const responseBySolicitud = await licenciasService.findBySolicitud(id);
+        if (responseBySolicitud.data) {
+          return responseBySolicitud.data;
+        }
+        return rejectWithValue('Licencia no encontrada');
+      } catch {
+        return rejectWithValue('Licencia no encontrada');
+      }
+    }
   }
 );
 

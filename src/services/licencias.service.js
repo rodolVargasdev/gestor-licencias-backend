@@ -3,7 +3,7 @@ const Licencia = require('../models/licencia.model');
 const Solicitud = require('../models/solicitud.model');
 const Trabajador = require('../models/trabajador.model');
 const TipoLicencia = require('../models/tipo-licencia.model');
-const ControlLimite = require('../models/control-limite.model');
+const Disponibilidad = require('../models/disponibilidad.model');
 const { Between, LessThanOrEqual, MoreThanOrEqual } = require('typeorm');
 
 class LicenciasService {
@@ -12,61 +12,48 @@ class LicenciasService {
         this.solicitudesRepository = AppDataSource.getRepository(Solicitud);
         this.trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         this.tiposLicenciasRepository = AppDataSource.getRepository(TipoLicencia);
-        this.controlLimitesRepository = AppDataSource.getRepository(ControlLimite);
+        this.disponibilidadRepository = AppDataSource.getRepository(Disponibilidad);
     }
 
     async create(licenciaData) {
         try {
-            // Verificar si la solicitud existe y está aprobada
-            const solicitud = await this.solicitudesRepository.findOne({
-                where: { id: licenciaData.solicitud_id },
-                relations: ['tipo_licencia']
-            });
-
-            if (!solicitud) {
-                throw new Error('La solicitud no existe');
+            // Permitir crear licencia directamente, sin solicitud
+            // Buscar trabajador y tipo de licencia
+            const trabajadorId = licenciaData.trabajador_id;
+            const tipoLicenciaId = licenciaData.tipo_licencia_id;
+            if (!trabajadorId || !tipoLicenciaId) {
+                throw new Error('Faltan datos de trabajador o tipo de licencia');
             }
 
-            if (solicitud.estado !== 'APROBADA') {
-                throw new Error('La solicitud debe estar aprobada para crear una licencia');
+            // Buscar tipo de licencia para obtener duración máxima
+            const tipoLicencia = await this.tiposLicenciasRepository.findOne({ where: { id: tipoLicenciaId } });
+            if (!tipoLicencia) {
+                throw new Error('El tipo de licencia no existe');
             }
 
-            // Verificar si ya existe una licencia para esta solicitud
-            const licenciaExistente = await this.licenciasRepository.findOne({
-                where: { solicitud_id: licenciaData.solicitud_id }
-            });
-
-            if (licenciaExistente) {
-                throw new Error('Ya existe una licencia para esta solicitud');
-            }
-
-            // Copiar datos de la solicitud
-            licenciaData.trabajador_id = solicitud.trabajador_id;
-            licenciaData.tipo_licencia_id = solicitud.tipo_licencia_id;
-            licenciaData.fecha_inicio = solicitud.fecha_inicio;
-            licenciaData.fecha_fin = solicitud.fecha_fin;
-            licenciaData.dias_habiles = solicitud.dias_habiles;
-            licenciaData.dias_calendario = solicitud.dias_calendario;
-            licenciaData.dias_totales = solicitud.dias_solicitados;
-            licenciaData.estado = 'ACTIVA';
-
-            // Actualizar el control de límites
-            const controlLimite = await this.controlLimitesRepository.findOne({
+            // Buscar o crear disponibilidad
+            let disponibilidad = await this.disponibilidadRepository.findOne({
                 where: {
-                    trabajador_id: solicitud.trabajador_id,
-                    tipo_licencia_id: solicitud.tipo_licencia_id,
-                    anio: new Date(solicitud.fecha_inicio).getFullYear()
+                    trabajador_id: trabajadorId,
+                    tipo_licencia_id: tipoLicenciaId
                 }
             });
-
-            if (!controlLimite) {
-                throw new Error('No existe un control de límite para este trabajador y tipo de licencia');
+            if (!disponibilidad) {
+                disponibilidad = this.disponibilidadRepository.create({
+                    trabajador_id: trabajadorId,
+                    tipo_licencia_id: tipoLicenciaId,
+                    dias_disponibles: tipoLicencia.duracion_maxima,
+                    dias_usados: 0,
+                    dias_restantes: tipoLicencia.duracion_maxima
+                });
             }
 
-            controlLimite.dias_utilizados += solicitud.dias_solicitados;
-            controlLimite.dias_disponibles = controlLimite.dias_totales - controlLimite.dias_utilizados;
-            await this.controlLimitesRepository.save(controlLimite);
+            // Actualizar disponibilidad
+            disponibilidad.dias_usados += licenciaData.dias_habiles;
+            disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+            await this.disponibilidadRepository.save(disponibilidad);
 
+            // Crear la licencia
             const licencia = this.licenciasRepository.create(licenciaData);
             return await this.licenciasRepository.save(licencia);
         } catch (error) {
@@ -109,19 +96,18 @@ class LicenciasService {
             if (licenciaData.estado === 'CANCELADA' && licencia.estado !== 'CANCELADA') {
                 licenciaData.fecha_cancelacion = new Date();
 
-                // Restaurar días en el control de límites
-                const controlLimite = await this.controlLimitesRepository.findOne({
+                // Restaurar días en disponibilidad
+                const disponibilidad = await this.disponibilidadRepository.findOne({
                     where: {
                         trabajador_id: licencia.trabajador_id,
-                        tipo_licencia_id: licencia.tipo_licencia_id,
-                        anio: new Date(licencia.fecha_inicio).getFullYear()
+                        tipo_licencia_id: licencia.tipo_licencia_id
                     }
                 });
 
-                if (controlLimite) {
-                    controlLimite.dias_utilizados -= licencia.dias_totales;
-                    controlLimite.dias_disponibles = controlLimite.dias_totales - controlLimite.dias_utilizados;
-                    await this.controlLimitesRepository.save(controlLimite);
+                if (disponibilidad) {
+                    disponibilidad.dias_usados -= licencia.dias_totales;
+                    disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+                    await this.disponibilidadRepository.save(disponibilidad);
                 }
             }
 
@@ -135,7 +121,27 @@ class LicenciasService {
     async delete(id) {
         try {
             const licencia = await this.findById(id);
-            return await this.licenciasRepository.remove(licencia);
+
+            if (!licencia) {
+                throw new Error('La licencia no existe');
+            }
+
+            // Actualizar disponibilidad
+            const disponibilidad = await this.disponibilidadRepository.findOne({
+                where: {
+                    trabajador_id: licencia.solicitud.trabajador_id,
+                    tipo_licencia_id: licencia.solicitud.tipo_licencia_id
+                }
+            });
+
+            if (disponibilidad) {
+                disponibilidad.dias_usados -= licencia.dias_habiles;
+                disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+                await this.disponibilidadRepository.save(disponibilidad);
+            }
+
+            await this.licenciasRepository.remove(licencia);
+            return true;
         } catch (error) {
             throw new Error(`Error al eliminar la licencia: ${error.message}`);
         }

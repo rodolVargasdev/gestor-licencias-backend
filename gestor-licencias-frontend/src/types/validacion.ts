@@ -1,45 +1,37 @@
-import type { TipoLicencia } from './tipoLicencia';
-import type { Trabajador } from './trabajador';
+import type { DisponibilidadTrabajador } from './disponibilidad';
+import type { Solicitud } from './solicitud';
 
 export interface Validacion {
   id: number;
-  tipoLicenciaId: number;
-  trabajadorId: number;
-  fechaInicio: string;
-  fechaFin: string;
-  estado: string;
+  solicitud_id: number;
+  validado_por: number;
+  fecha_validacion: string;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
   observaciones?: string;
-  createdAt: string;
-  updatedAt: string;
-  tipoLicencia?: {
-    id: number;
-    nombre: string;
-    descripcion: string;
-  };
-  trabajador?: {
-    id: number;
-    nombre: string;
-    apellido: string;
-    documento: string;
+  disponibilidad?: DisponibilidadTrabajador;
+  solicitud?: Solicitud & {
+    trabajador?: {
+      id: number;
+      nombre_completo: string;
+    };
+    tipo_licencia?: {
+      id: number;
+      nombre: string;
+    };
   };
 }
 
 export interface CreateValidacionDTO {
-  tipoLicenciaId: number;
-  trabajadorId: number;
-  fechaInicio: string;
-  fechaFin: string;
-  estado: string;
+  solicitud_id: number;
+  validado_por: number;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
   observaciones?: string;
 }
 
 export interface UpdateValidacionDTO {
-  tipoLicenciaId?: number;
-  trabajadorId?: number;
-  fechaInicio?: string;
-  fechaFin?: string;
-  estado?: string;
+  estado?: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
   observaciones?: string;
+  fecha_aprobacion?: string;
 }
 
 export type EstadoValidacion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA'; 

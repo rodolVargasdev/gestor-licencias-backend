@@ -1,3 +1,6 @@
+// Página deshabilitada por simplificación del flujo de licencias
+// export default function ValidacionesPage() { return null; }
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,6 +29,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
 
 const ValidacionesPage: React.FC = () => {
   const dispatch = useDispatch();
@@ -85,14 +89,17 @@ const ValidacionesPage: React.FC = () => {
               {validaciones.map((val) => (
                 <TableRow key={val.id}>
                   <TableCell>{val.id}</TableCell>
-                  <TableCell>{val.tipoLicencia?.nombre || val.tipoLicenciaId}</TableCell>
-                  <TableCell>{val.trabajador?.nombre ? `${val.trabajador.nombre} ${val.trabajador.apellido}` : val.trabajadorId}</TableCell>
-                  <TableCell>{val.fechaInicio}</TableCell>
-                  <TableCell>{val.fechaFin}</TableCell>
+                  <TableCell>{val.solicitud?.tipo_licencia?.nombre || '-'}</TableCell>
+                  <TableCell>{val.solicitud?.trabajador?.nombre_completo || '-'}</TableCell>
+                  <TableCell>{val.solicitud?.fecha_inicio || '-'}</TableCell>
+                  <TableCell>{val.solicitud?.fecha_fin || '-'}</TableCell>
                   <TableCell>{val.estado}</TableCell>
                   <TableCell>
                     <IconButton color="primary" onClick={() => navigate(`/validaciones/editar/${val.id}`)}>
                       <EditIcon />
+                    </IconButton>
+                    <IconButton color="success" onClick={() => navigate(`/validaciones/editar/${val.id}`)}>
+                      <CheckIcon />
                     </IconButton>
                     <IconButton color="error" onClick={() => handleDeleteClick(val.id)}>
                       <DeleteIcon />

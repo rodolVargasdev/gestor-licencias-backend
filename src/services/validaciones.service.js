@@ -2,12 +2,16 @@ const { AppDataSource } = require('../config/database');
 const Validacion = require('../models/validacion.model');
 const Solicitud = require('../models/solicitud.model');
 const Trabajador = require('../models/trabajador.model');
+const Disponibilidad = require('../models/disponibilidad.model');
+const Licencia = require('../models/licencia.model');
 
 class ValidacionesService {
     constructor() {
         this.validacionesRepository = AppDataSource.getRepository(Validacion);
         this.solicitudesRepository = AppDataSource.getRepository(Solicitud);
         this.trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        this.disponibilidadRepository = AppDataSource.getRepository(Disponibilidad);
+        this.licenciasRepository = AppDataSource.getRepository(Licencia);
     }
 
     async create(validacionData) {
@@ -49,7 +53,12 @@ class ValidacionesService {
     async findAll() {
         try {
             return await this.validacionesRepository.find({
-                relations: ['solicitud', 'validador']
+                relations: [
+                    'solicitud',
+                    'solicitud.trabajador',
+                    'solicitud.tipo_licencia',
+                    'validador'
+                ]
             });
         } catch (error) {
             throw new Error(`Error al obtener las validaciones: ${error.message}`);
@@ -76,14 +85,75 @@ class ValidacionesService {
     async update(id, validacionData) {
         try {
             const validacion = await this.findById(id);
+            const solicitud = await this.solicitudesRepository.findOne({
+                where: { id: validacion.solicitud_id },
+                relations: ['tipo_licencia']
+            });
+
+            if (!solicitud) {
+                throw new Error('La solicitud asociada no existe');
+            }
+
+            let disponibilidadActualizada = null;
 
             // Si se está actualizando el estado, registrar la fecha de validación
             if (validacionData.estado && validacionData.estado !== validacion.estado) {
                 validacionData.fecha_validacion = new Date();
+
+                // Si se está aprobando la validación
+                if (validacionData.estado === 'APROBADA') {
+                    // 1. Actualizar la solicitud a APROBADA
+                    solicitud.estado = 'APROBADA';
+                    solicitud.fecha_aprobacion = new Date();
+                    await this.solicitudesRepository.save(solicitud);
+
+                    // 2. Buscar o crear registro de disponibilidad
+                    let disponibilidad = await this.disponibilidadRepository.findOne({
+                        where: {
+                            trabajador_id: solicitud.trabajador_id,
+                            tipo_licencia_id: solicitud.tipo_licencia_id
+                        }
+                    });
+
+                    if (!disponibilidad) {
+                        disponibilidad = this.disponibilidadRepository.create({
+                            trabajador_id: solicitud.trabajador_id,
+                            tipo_licencia_id: solicitud.tipo_licencia_id,
+                            dias_disponibles: solicitud.tipo_licencia.duracion_maxima,
+                            dias_usados: 0,
+                            dias_restantes: solicitud.tipo_licencia.duracion_maxima
+                        });
+                    }
+
+                    // 3. Actualizar disponibilidad (permitiendo números negativos)
+                    disponibilidad.dias_usados += solicitud.dias_habiles;
+                    disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+                    disponibilidadActualizada = await this.disponibilidadRepository.save(disponibilidad);
+
+                    // 4. Crear la licencia
+                    const licencia = this.licenciasRepository.create({
+                        solicitud_id: solicitud.id,
+                        trabajador_id: solicitud.trabajador_id,
+                        tipo_licencia_id: solicitud.tipo_licencia_id,
+                        fecha_inicio: solicitud.fecha_inicio,
+                        fecha_fin: solicitud.fecha_fin,
+                        dias_habiles: solicitud.dias_habiles,
+                        dias_calendario: solicitud.dias_calendario,
+                        dias_totales: solicitud.dias_solicitados,
+                        estado: 'ACTIVA'
+                    });
+                    await this.licenciasRepository.save(licencia);
+                }
             }
 
             Object.assign(validacion, validacionData);
-            return await this.validacionesRepository.save(validacion);
+            const validacionActualizada = await this.validacionesRepository.save(validacion);
+
+            // Devolver la validación actualizada junto con la información de disponibilidad si se aprobó
+            return {
+                ...validacionActualizada,
+                disponibilidad: disponibilidadActualizada
+            };
         } catch (error) {
             throw new Error(`Error al actualizar la validación: ${error.message}`);
         }

@@ -19,12 +19,14 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
-import { createLicencia } from '../../store/slices/licenciasSlice';
+import { createSolicitud } from '../../store/slices/solicitudesSlice';
 import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
 import { fetchDisponibilidadByTrabajador } from '../../store/slices/disponibilidadSlice';
 import type { RootState, AppDispatch } from '../../store';
-import type { Licencia } from '../../types/licencia';
+import type { Solicitud } from '../../types/solicitud';
+import type { DisponibilidadTrabajador } from '../../types/disponibilidad';
+import type { PayloadAction } from '@reduxjs/toolkit';
 
 const CreateLicenciaPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -32,18 +34,17 @@ const CreateLicenciaPage: React.FC = () => {
   
   const trabajadores = useSelector((state: RootState) => state.trabajadores.items);
   const tiposLicencias = useSelector((state: RootState) => state.tiposLicencias.items);
-  
-  const [formData, setFormData] = useState<Partial<Licencia>>({
+
+  const [formData, setFormData] = useState<Partial<Solicitud>>({
     trabajador_id: 0,
     tipo_licencia_id: 0,
     fecha_inicio: '',
     fecha_fin: '',
-    dias_totales: 0,
-    dias_habiles: 0,
-    dias_calendario: 0,
-    estado: 'ACTIVA',
     motivo: '',
-    observaciones: ''
+    estado: 'APROBADA',
+    fecha_solicitud: new Date().toISOString().split('T')[0],
+    justificacion: '',
+    documento: undefined
   });
 
   const [snackbar, setSnackbar] = useState({
@@ -52,13 +53,34 @@ const CreateLicenciaPage: React.FC = () => {
     severity: 'success' as 'success' | 'error'
   });
 
+  const [disponibilidad, setDisponibilidad] = useState<number | null>(null);
+  const [periodoRenovacion, setPeriodoRenovacion] = useState<string>('');
+
   useEffect(() => {
     dispatch(fetchTrabajadores());
     dispatch(fetchTiposLicencias());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (formData.trabajador_id && formData.tipo_licencia_id) {
+      dispatch(fetchDisponibilidadByTrabajador(formData.trabajador_id)).then((action) => {
+        const payload = (action as PayloadAction<DisponibilidadTrabajador[]>).payload;
+        if (payload) {
+          const disp = payload.find((d) => d.tipo_licencia.id === Number(formData.tipo_licencia_id));
+          setDisponibilidad(disp ? disp.dias_restantes : null);
+        }
+      });
+      const tipo = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
+      setPeriodoRenovacion(tipo?.periodo_renovacion || '');
+    } else {
+      setDisponibilidad(null);
+      setPeriodoRenovacion('');
+    }
+  }, [formData.trabajador_id, formData.tipo_licencia_id, tiposLicencias, dispatch]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
+    if (name === 'estado') return;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -74,50 +96,32 @@ const CreateLicenciaPage: React.FC = () => {
     }
   };
 
-  const calculateDays = (startDate: string, endDate: string) => {
-    if (!startDate || !endDate) return;
-    
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Calcular días hábiles (excluyendo fines de semana)
-    let businessDays = 0;
-    const current = new Date(start);
-    while (current <= end) {
-      const day = current.getDay();
-      if (day !== 0 && day !== 6) { // 0 es domingo, 6 es sábado
-        businessDays++;
-      }
-      current.setDate(current.getDate() + 1);
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      dias_totales: diffDays + 1,
-      dias_calendario: diffDays + 1,
-      dias_habiles: businessDays
-    }));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, documento: e.target.files?.[0] }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dispatch(createLicencia(formData));
+      const action = await dispatch(createSolicitud(formData));
+      const newSolicitud = action.payload as Solicitud;
       if (formData.trabajador_id) {
         await dispatch(fetchDisponibilidadByTrabajador(formData.trabajador_id));
       }
       setSnackbar({
         open: true,
-        message: 'Licencia creada correctamente',
+        message: 'Solicitud creada correctamente',
         severity: 'success'
       });
-      navigate('/licencias');
+      if (newSolicitud && newSolicitud.id) {
+        navigate(`/licencias/${newSolicitud.id}`);
+      } else {
+        navigate('/licencias');
+      }
     } catch {
       setSnackbar({
         open: true,
-        message: 'Error al crear la licencia',
+        message: 'Error al crear la solicitud',
         severity: 'error'
       });
     }
@@ -126,6 +130,11 @@ const CreateLicenciaPage: React.FC = () => {
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
+
+  // Obtener el tipo de licencia seleccionado
+  const selectedTipoLicencia = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
+  const requiereJustificacion = selectedTipoLicencia?.requiere_justificacion;
+  const requiereDocumento = selectedTipoLicencia?.requiere_documentacion;
 
   return (
     <Box>
@@ -186,12 +195,7 @@ const CreateLicenciaPage: React.FC = () => {
               <DatePicker
                 label="Fecha Fin"
                 value={formData.fecha_fin ? new Date(formData.fecha_fin) : null}
-                onChange={(date) => {
-                  handleDateChange('fecha_fin')(date);
-                  if (date && formData.fecha_inicio) {
-                    calculateDays(formData.fecha_inicio, date.toISOString().split('T')[0]);
-                  }
-                }}
+                onChange={handleDateChange('fecha_fin')}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -202,27 +206,14 @@ const CreateLicenciaPage: React.FC = () => {
             </LocalizationProvider>
 
             <TextField
-              name="dias_totales"
-              label="Días Totales"
-              value={formData.dias_totales}
-              InputProps={{ readOnly: true }}
+              label="Fecha de Solicitud"
+              name="fecha_solicitud"
+              type="date"
+              value={formData.fecha_solicitud}
+              onChange={handleChange}
               fullWidth
-            />
-
-            <TextField
-              name="dias_habiles"
-              label="Días Hábil"
-              value={formData.dias_habiles}
-              InputProps={{ readOnly: true }}
-              fullWidth
-            />
-
-            <TextField
-              name="dias_calendario"
-              label="Días Calendario"
-              value={formData.dias_calendario}
-              InputProps={{ readOnly: true }}
-              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
             />
 
             <TextField
@@ -236,15 +227,44 @@ const CreateLicenciaPage: React.FC = () => {
               required
             />
 
+            {requiereJustificacion && (
+              <TextField
+                label="Justificación"
+                name="justificacion"
+                value={formData.justificacion || ''}
+                onChange={handleChange}
+                fullWidth
+                required
+              />
+            )}
+
+            {requiereDocumento && (
+              <TextField
+                label="Documento Soporte"
+                name="documento"
+                type="file"
+                onChange={handleFileChange}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+
             <TextField
-              name="observaciones"
-              label="Observaciones"
-              value={formData.observaciones}
-              onChange={handleChange}
+              label="Estado"
+              name="estado"
+              value="APROBADA"
               fullWidth
-              multiline
-              rows={2}
+              InputProps={{ readOnly: true }}
             />
+
+            {formData.trabajador_id && formData.tipo_licencia_id && (
+              <Box sx={{ gridColumn: '1 / span 2', mb: 2 }}>
+                <Alert severity="info">
+                  Disponibilidad restante: <b>{disponibilidad !== null ? disponibilidad : 'N/A'}</b> días.<br />
+                  Periodo de renovación: <b>{periodoRenovacion ? (periodoRenovacion === 'ANUAL' ? 'Anual' : 'Mensual') : 'N/A'}</b>
+                </Alert>
+              </Box>
+            )}
 
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', gridColumn: '1 / -1' }}>
               <Button

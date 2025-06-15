@@ -2,14 +2,16 @@ const { AppDataSource } = require('../config/database');
 const Solicitud = require('../models/solicitud.model');
 const Trabajador = require('../models/trabajador.model');
 const TipoLicencia = require('../models/tipo-licencia.model');
-const ControlLimite = require('../models/control-limite.model');
+const Disponibilidad = require('../models/disponibilidad.model');
+const Licencia = require('../models/licencia.model');
 
 class SolicitudesService {
     constructor() {
         this.solicitudesRepository = AppDataSource.getRepository(Solicitud);
         this.trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         this.tiposLicenciasRepository = AppDataSource.getRepository(TipoLicencia);
-        this.controlLimitesRepository = AppDataSource.getRepository(ControlLimite);
+        this.disponibilidadRepository = AppDataSource.getRepository(Disponibilidad);
+        this.licenciasRepository = AppDataSource.getRepository(Licencia);
     }
 
     async create(solicitudData) {
@@ -41,24 +43,52 @@ class SolicitudesService {
             solicitudData.dias_solicitados = tipoLicencia.goce_salario ? diasHabiles : diasCalendario;
 
             // Verificar disponibilidad de días
-            const controlLimite = await this.controlLimitesRepository.findOne({
+            let disponibilidad = await this.disponibilidadRepository.findOne({
                 where: {
                     trabajador_id: solicitudData.trabajador_id,
-                    tipo_licencia_id: solicitudData.tipo_licencia_id,
-                    anio: new Date(solicitudData.fecha_inicio).getFullYear()
+                    tipo_licencia_id: solicitudData.tipo_licencia_id
                 }
             });
 
-            if (!controlLimite) {
-                throw new Error('No existe un control de límite para este trabajador y tipo de licencia');
-            }
-
-            if (controlLimite.dias_disponibles < solicitudData.dias_solicitados) {
-                throw new Error('No hay suficientes días disponibles para esta solicitud');
+            if (!disponibilidad) {
+                // Si no existe, crear una nueva disponibilidad
+                disponibilidad = this.disponibilidadRepository.create({
+                    trabajador_id: solicitudData.trabajador_id,
+                    tipo_licencia_id: solicitudData.tipo_licencia_id,
+                    dias_disponibles: tipoLicencia.duracion_maxima,
+                    dias_usados: 0,
+                    dias_restantes: tipoLicencia.duracion_maxima
+                });
+                await this.disponibilidadRepository.save(disponibilidad);
             }
 
             const solicitud = this.solicitudesRepository.create(solicitudData);
-            return await this.solicitudesRepository.save(solicitud);
+            const savedSolicitud = await this.solicitudesRepository.save(solicitud);
+
+            // Si la solicitud es APROBADA, crear la licencia y actualizar disponibilidad
+            if (savedSolicitud.estado === 'APROBADA') {
+                // Actualizar disponibilidad
+                disponibilidad.dias_usados += diasHabiles;
+                disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+                await this.disponibilidadRepository.save(disponibilidad);
+
+                // Crear la licencia
+                const licencia = this.licenciasRepository.create({
+                    solicitud_id: savedSolicitud.id,
+                    trabajador_id: savedSolicitud.trabajador_id,
+                    tipo_licencia_id: savedSolicitud.tipo_licencia_id,
+                    fecha_inicio: savedSolicitud.fecha_inicio,
+                    fecha_fin: savedSolicitud.fecha_fin,
+                    dias_totales: savedSolicitud.dias_solicitados,
+                    dias_habiles: savedSolicitud.dias_habiles,
+                    dias_calendario: savedSolicitud.dias_calendario,
+                    estado: 'ACTIVA',
+                    activo: true
+                });
+                await this.licenciasRepository.save(licencia);
+            }
+
+            return savedSolicitud;
         } catch (error) {
             throw new Error(`Error al crear la solicitud: ${error.message}`);
         }

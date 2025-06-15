@@ -3,7 +3,6 @@ const Licencia = require('../models/licencia.model');
 const Solicitud = require('../models/solicitud.model');
 const Trabajador = require('../models/trabajador.model');
 const TipoLicencia = require('../models/tipo-licencia.model');
-const ControlLimite = require('../models/control-limite.model');
 const Disponibilidad = require('../models/disponibilidad.model');
 const { Between, LessThanOrEqual, MoreThanOrEqual } = require('typeorm');
 
@@ -13,7 +12,6 @@ class ReportesService {
         this.solicitudesRepository = AppDataSource.getRepository(Solicitud);
         this.trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         this.tiposLicenciasRepository = AppDataSource.getRepository(TipoLicencia);
-        this.controlLimitesRepository = AppDataSource.getRepository(ControlLimite);
         this.disponibilidadRepository = AppDataSource.getRepository(Disponibilidad);
     }
 
@@ -192,70 +190,30 @@ class ReportesService {
         }
     }
 
-    async reporteLímitesPorTipoLicencia(anio) {
+    async getReporteDisponibilidad() {
         try {
-            const limites = await this.controlLimitesRepository.find({
-                where: { anio },
+            const disponibilidades = await this.disponibilidadRepository.find({
                 relations: ['trabajador', 'tipo_licencia']
             });
 
-            const reporte = {
-                total_trabajadores: new Set(limites.map(l => l.trabajador_id)).size,
-                por_tipo_licencia: {},
-                por_departamento: {},
-                por_tipo_personal: {
-                    OPERATIVO: {
-                        dias_totales: 0,
-                        dias_utilizados: 0,
-                        dias_disponibles: 0
-                    },
-                    ADMINISTRATIVO: {
-                        dias_totales: 0,
-                        dias_utilizados: 0,
-                        dias_disponibles: 0
-                    }
-                }
-            };
-
-            limites.forEach(limite => {
-                // Agrupar por tipo de licencia
-                const tipoLicencia = limite.tipo_licencia.nombre;
-                if (!reporte.por_tipo_licencia[tipoLicencia]) {
-                    reporte.por_tipo_licencia[tipoLicencia] = {
-                        dias_totales: 0,
-                        dias_utilizados: 0,
-                        dias_disponibles: 0,
-                        trabajadores: 0
-                    };
-                }
-                reporte.por_tipo_licencia[tipoLicencia].dias_totales += limite.dias_totales;
-                reporte.por_tipo_licencia[tipoLicencia].dias_utilizados += limite.dias_utilizados;
-                reporte.por_tipo_licencia[tipoLicencia].dias_disponibles += limite.dias_disponibles;
-                reporte.por_tipo_licencia[tipoLicencia].trabajadores++;
-
-                // Agrupar por departamento
-                const departamento = limite.trabajador.departamento?.nombre || 'Sin departamento';
-                if (!reporte.por_departamento[departamento]) {
-                    reporte.por_departamento[departamento] = {
-                        dias_totales: 0,
-                        dias_utilizados: 0,
-                        dias_disponibles: 0
-                    };
-                }
-                reporte.por_departamento[departamento].dias_totales += limite.dias_totales;
-                reporte.por_departamento[departamento].dias_utilizados += limite.dias_utilizados;
-                reporte.por_departamento[departamento].dias_disponibles += limite.dias_disponibles;
-
-                // Agrupar por tipo de personal
-                const tipoPersonal = limite.trabajador.tipo_personal;
-                reporte.por_tipo_personal[tipoPersonal].dias_totales += limite.dias_totales;
-                reporte.por_tipo_personal[tipoPersonal].dias_utilizados += limite.dias_utilizados;
-                reporte.por_tipo_personal[tipoPersonal].dias_disponibles += limite.dias_disponibles;
-            });
-
-            return reporte;
+            return disponibilidades.map(disp => ({
+                trabajador: {
+                    id: disp.trabajador.id,
+                    nombre: disp.trabajador.nombre,
+                    apellido: disp.trabajador.apellido,
+                    departamento: disp.trabajador.departamento,
+                    puesto: disp.trabajador.puesto
+                },
+                tipo_licencia: {
+                    id: disp.tipo_licencia.id,
+                    nombre: disp.tipo_licencia.nombre
+                },
+                dias_disponibles: disp.dias_disponibles,
+                dias_usados: disp.dias_usados,
+                dias_restantes: disp.dias_restantes
+            }));
         } catch (error) {
-            throw new Error(`Error al generar el reporte de límites por tipo de licencia: ${error.message}`);
+            throw new Error(`Error al generar reporte de disponibilidad: ${error.message}`);
         }
     }
 }

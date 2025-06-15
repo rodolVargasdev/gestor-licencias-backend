@@ -18,7 +18,6 @@ import type { GridColDef } from '@mui/x-data-grid';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { fetchTrabajadores, deleteTrabajador } from '../../store/slices/trabajadoresSlice';
-import type { Trabajador } from '../../types/trabajador';
 
 const TrabajadoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,9 +44,9 @@ const TrabajadoresPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (deleteId) {
-      try {
+    try {
         await dispatch(deleteTrabajador(deleteId)).unwrap();
-        setDeleteId(null);
+      setDeleteId(null);
       } catch (error) {
         setErrorMessage('Error al eliminar trabajador');
         console.error('Error al eliminar trabajador:', error);
@@ -118,8 +117,8 @@ const TrabajadoresPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ height: '100%', width: '100%', p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, width: '100%', maxWidth: 1100 }}>
         <Typography variant="h5" component="h1">
           Trabajadores
         </Typography>
@@ -133,29 +132,31 @@ const TrabajadoresPage: React.FC = () => {
         </Button>
       </Box>
 
-      <DataGrid
-        rows={trabajadoresProcesados}
-        columns={columns}
-        getRowId={(row) => row.id}
-        loading={loading}
-        autoHeight
-        pageSizeOptions={[5, 10, 25, 50]}
-        initialState={{
-          pagination: {
-            paginationModel: { pageSize: 10, page: 0 },
-          },
-        }}
-        disableRowSelectionOnClick
-        sx={{
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-row:hover': {
-            cursor: 'pointer',
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-        }}
-      />
+      <Box sx={{ width: '100%', maxWidth: 1100, mx: 'auto' }}>
+        <DataGrid
+          rows={trabajadoresProcesados}
+          columns={columns}
+          getRowId={(row) => row.id}
+          loading={loading}
+          autoHeight
+          pageSizeOptions={[5, 10, 25, 50]}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10, page: 0 },
+            },
+          }}
+          disableRowSelectionOnClick
+          sx={{
+            '& .MuiDataGrid-cell:focus': {
+              outline: 'none',
+            },
+            '& .MuiDataGrid-row:hover': {
+              cursor: 'pointer',
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        />
+      </Box>
 
       <Snackbar
         open={!!errorMessage}

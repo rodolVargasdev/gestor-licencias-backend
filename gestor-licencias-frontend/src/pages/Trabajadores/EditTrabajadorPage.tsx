@@ -14,58 +14,50 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText
+  FormHelperText,
+  CircularProgress
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import esLocale from 'date-fns/locale/es';
+import { es } from 'date-fns/locale';
 import type { RootState } from '../../store';
+import type { UpdateTrabajadorDTO } from '../../types/trabajador';
+import { fetchDepartamentos } from '../../store/slices/departamentosSlice';
+import { fetchPuestos } from '../../store/slices/puestosSlice';
 
 const EditTrabajadorPage: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const trabajador = useSelector((state: RootState) => state.trabajadores.selectedTrabajador);
-  const [formData, setFormData] = useState({
+  const { selectedTrabajador: trabajador, loading, error } = useSelector((state: RootState) => state.trabajadores);
+  const [formData, setFormData] = useState<UpdateTrabajadorDTO>({
     codigo: '',
     nombre_completo: '',
     email: '',
     telefono: '',
-    departamento_id: '',
-    puesto_id: '',
-    tipo_personal: '',
-    fecha_ingreso: null as Date | null,
+    departamento_id: 0,
+    puesto_id: 0,
+    tipo_personal: 'OPERATIVO',
+    fecha_ingreso: '',
     activo: true
   });
-  const [departamentos, setDepartamentos] = useState([]);
-  const [puestos, setPuestos] = useState([]);
+  const departamentos = useSelector((state: RootState) => state.departamentos.items);
+  const puestos = useSelector((state: RootState) => state.puestos.items);
+  const loadingDepartamentos = useSelector((state: RootState) => state.departamentos.loading);
+  const loadingPuestos = useSelector((state: RootState) => state.puestos.loading);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [departamentosRes, puestosRes] = await Promise.all([
-          fetch('http://localhost:3000/api/departamentos'),
-          fetch('http://localhost:3000/api/puestos')
-        ]);
-        const [departamentosData, puestosData] = await Promise.all([
-          departamentosRes.json(),
-          puestosRes.json()
-        ]);
-        setDepartamentos(departamentosData);
-        setPuestos(puestosData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    fetchData();
-  }, []);
+    dispatch(fetchDepartamentos());
+    dispatch(fetchPuestos());
+  }, [dispatch]);
 
   useEffect(() => {
     if (id) {
-      dispatch(fetchTrabajadorById(parseInt(id)) as any);
+      dispatch(fetchTrabajadorById(parseInt(id)));
     }
   }, [dispatch, id]);
 
@@ -76,10 +68,10 @@ const EditTrabajadorPage: React.FC = () => {
         nombre_completo: trabajador.nombre_completo,
         email: trabajador.email,
         telefono: trabajador.telefono || '',
-        departamento_id: trabajador.departamento_id?.toString() || '',
-        puesto_id: trabajador.puesto_id?.toString() || '',
+        departamento_id: trabajador.departamento_id || 0,
+        puesto_id: trabajador.puesto_id || 0,
         tipo_personal: trabajador.tipo_personal,
-        fecha_ingreso: trabajador.fecha_ingreso ? new Date(trabajador.fecha_ingreso) : null,
+        fecha_ingreso: trabajador.fecha_ingreso,
         activo: trabajador.activo
       });
     }
@@ -87,9 +79,9 @@ const EditTrabajadorPage: React.FC = () => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.codigo.trim()) newErrors.codigo = 'El código es obligatorio';
-    if (!formData.nombre_completo.trim()) newErrors.nombre_completo = 'El nombre completo es obligatorio';
-    if (!formData.email.trim()) newErrors.email = 'El email es obligatorio';
+    if (!formData.codigo?.trim()) newErrors.codigo = 'El código es obligatorio';
+    if (!formData.nombre_completo?.trim()) newErrors.nombre_completo = 'El nombre completo es obligatorio';
+    if (!formData.email?.trim()) newErrors.email = 'El email es obligatorio';
     if (!formData.departamento_id) newErrors.departamento_id = 'El departamento es obligatorio';
     if (!formData.puesto_id) newErrors.puesto_id = 'El puesto es obligatorio';
     if (!formData.tipo_personal) newErrors.tipo_personal = 'El tipo de personal es obligatorio';
@@ -109,7 +101,10 @@ const EditTrabajadorPage: React.FC = () => {
     e.preventDefault();
     if (!validate() || !id) return;
     try {
-      await dispatch(updateTrabajador({ id: parseInt(id), ...formData }) as any).unwrap();
+      await dispatch(updateTrabajador({ 
+        id: parseInt(id), 
+        data: formData 
+      })).unwrap();
       setSnackbar({ open: true, message: 'Trabajador actualizado correctamente', severity: 'success' });
       setTimeout(() => navigate('/trabajadores'), 1000);
     } catch (error) {
@@ -117,7 +112,7 @@ const EditTrabajadorPage: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -128,14 +123,36 @@ const EditTrabajadorPage: React.FC = () => {
   const handleDateChange = (date: Date | null) => {
     setFormData(prev => ({
       ...prev,
-      fecha_ingreso: date
+      fecha_ingreso: date ? date.toISOString().split('T')[0] : ''
     }));
   };
 
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
+  if (
+    loading ||
+    loadingDepartamentos ||
+    loadingPuestos ||
+    !Array.isArray(departamentos) || departamentos.length === 0 ||
+    !Array.isArray(puestos) || puestos.length === 0
+  ) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
   if (!trabajador) {
-    return <Typography>Cargando...</Typography>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Typography>Trabajador no encontrado</Typography>
+      </Box>
+    );
   }
 
   return (
@@ -193,9 +210,9 @@ const EditTrabajadorPage: React.FC = () => {
               onChange={handleChange}
               label="Departamento"
             >
-              {departamentos.map((depto: any) => (
-                <MenuItem key={depto.id} value={depto.id}>
-                  {depto.nombre}
+              {(Array.isArray(departamentos) ? departamentos : []).map((dep) => (
+                <MenuItem key={dep.id} value={dep.id}>
+                  {dep.nombre}
                 </MenuItem>
               ))}
             </Select>
@@ -209,7 +226,7 @@ const EditTrabajadorPage: React.FC = () => {
               onChange={handleChange}
               label="Puesto"
             >
-              {puestos.map((puesto: any) => (
+              {(Array.isArray(puestos) ? puestos : []).map((puesto) => (
                 <MenuItem key={puesto.id} value={puesto.id}>
                   {puesto.nombre}
                 </MenuItem>
@@ -230,10 +247,10 @@ const EditTrabajadorPage: React.FC = () => {
             </Select>
             {errors.tipo_personal && <FormHelperText>{errors.tipo_personal}</FormHelperText>}
           </FormControl>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={esLocale}>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
             <DatePicker
               label="Fecha de Ingreso"
-              value={formData.fecha_ingreso}
+              value={formData.fecha_ingreso ? new Date(formData.fecha_ingreso) : null}
               onChange={handleDateChange}
               slotProps={{
                 textField: {

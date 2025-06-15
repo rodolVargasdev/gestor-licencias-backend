@@ -12,7 +12,31 @@ class TrabajadoresService {
     async create(trabajadorData) {
         try {
             const trabajador = this.trabajadoresRepository.create(trabajadorData);
-            return await this.trabajadoresRepository.save(trabajador);
+            const savedTrabajador = await this.trabajadoresRepository.save(trabajador);
+
+            // Inicializar disponibilidad para todos los tipos de licencia activos
+            const tipoLicenciaRepo = AppDataSource.getRepository('TipoLicencia');
+            const disponibilidadRepo = AppDataSource.getRepository('Disponibilidad');
+            const tipos = await tipoLicenciaRepo.find({ where: { activo: true } });
+            for (const tipo of tipos) {
+                // Verificar si ya existe
+                const existe = await disponibilidadRepo.findOne({
+                    where: {
+                        trabajador_id: savedTrabajador.id,
+                        tipo_licencia_id: tipo.id
+                    }
+                });
+                if (!existe) {
+                    await disponibilidadRepo.save({
+                        trabajador_id: savedTrabajador.id,
+                        tipo_licencia_id: tipo.id,
+                        dias_disponibles: tipo.duracion_maxima,
+                        dias_usados: 0,
+                        dias_restantes: tipo.duracion_maxima
+                    });
+                }
+            }
+            return savedTrabajador;
         } catch (error) {
             throw new Error(`Error al crear el trabajador: ${error.message}`);
         }
@@ -112,6 +136,17 @@ class TrabajadoresService {
             });
         } catch (error) {
             throw new Error(`Error al obtener las licencias por periodo: ${error.message}`);
+        }
+    }
+
+    async findByCodigo(codigo) {
+        try {
+            return await this.trabajadoresRepository.findOne({
+                where: { codigo },
+                relations: ['licencias', 'departamento', 'puesto']
+            });
+        } catch (error) {
+            throw new Error(`Error al buscar trabajador por código: ${error.message}`);
         }
     }
 }

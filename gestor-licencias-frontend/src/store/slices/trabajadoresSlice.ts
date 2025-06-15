@@ -27,8 +27,7 @@ export const fetchTrabajadores = createAsyncThunk<Trabajador[]>(
 export const fetchTrabajadorById = createAsyncThunk(
   'trabajadores/fetchById',
   async (id: number) => {
-    const response = await trabajadoresService.getById(id);
-    return response.data;
+    return await trabajadoresService.getById(id);
   }
 );
 

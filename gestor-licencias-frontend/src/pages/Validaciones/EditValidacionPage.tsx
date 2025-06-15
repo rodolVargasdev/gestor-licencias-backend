@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchValidaciones, updateValidacion } from '../../store/slices/validacionesSlice';
 import type { RootState } from '../../store';
-import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem } from '@mui/material';
+import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 const estados = ['PENDIENTE', 'APROBADA', 'RECHAZADA', 'CANCELADA'];
 
@@ -23,6 +23,12 @@ const EditValidacionPage: React.FC = () => {
   const [observaciones, setObservaciones] = useState(validacion?.observaciones || '');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<{ tipoLicenciaId?: string; trabajadorId?: string; fechaInicio?: string; fechaFin?: string; estado?: string }>({});
+  const [approvalDialog, setApprovalDialog] = useState(false);
+  const [approvalDetails, setApprovalDetails] = useState<{
+    diasDisponibles: number;
+    diasUsados: number;
+    diasRestantes: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!validacion && id) {
@@ -57,12 +63,50 @@ const EditValidacionPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate() || !id) return;
+
+    // Si se está aprobando, mostrar diálogo de confirmación
+    if (estado === 'APROBADA') {
+      setApprovalDialog(true);
+      return;
+    }
+
+    await submitChanges();
+  };
+
+  const submitChanges = async () => {
     try {
-      await dispatch(updateValidacion({ id: Number(id), dto: { tipoLicenciaId: Number(tipoLicenciaId), trabajadorId: Number(trabajadorId), fechaInicio, fechaFin, estado, observaciones } }) as any).unwrap();
-      setSnackbar({ open: true, message: 'Solicitud actualizada correctamente', severity: 'success' });
-      setTimeout(() => navigate('/validaciones'), 1000);
-    } catch {
-      setSnackbar({ open: true, message: 'Error al actualizar la solicitud', severity: 'error' });
+      const response = await dispatch(updateValidacion({
+        id: Number(id),
+        data: {
+          estado,
+          observaciones,
+          fecha_aprobacion: estado === 'APROBADA' ? new Date().toISOString().split('T')[0] : undefined
+        }
+      }) as any).unwrap();
+
+      // Si se aprobó, mostrar detalles de disponibilidad
+      if (estado === 'APROBADA' && response.disponibilidad) {
+        setApprovalDetails({
+          diasDisponibles: response.disponibilidad.dias_disponibles,
+          diasUsados: response.disponibilidad.dias_usados,
+          diasRestantes: response.disponibilidad.dias_restantes
+        });
+      }
+
+      setSnackbar({
+        open: true,
+        message: estado === 'APROBADA' 
+          ? 'Solicitud aprobada y disponibilidad actualizada correctamente'
+          : 'Solicitud actualizada correctamente',
+        severity: 'success'
+      });
+      setTimeout(() => navigate('/validaciones'), 2000);
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: 'Error al actualizar la solicitud',
+        severity: 'error'
+      });
     }
   };
 
@@ -162,6 +206,60 @@ const EditValidacionPage: React.FC = () => {
           </Box>
         </form>
       </Paper>
+
+      {/* Diálogo de confirmación de aprobación */}
+      <Dialog open={approvalDialog} onClose={() => setApprovalDialog(false)}>
+        <DialogTitle>Confirmar Aprobación</DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Está seguro que desea aprobar esta solicitud? Esta acción:
+          </Typography>
+          <ul>
+            <li>Actualizará el estado de la solicitud a APROBADA</li>
+            <li>Creará una nueva licencia</li>
+            <li>Actualizará la disponibilidad del trabajador</li>
+          </ul>
+          <Typography color="warning.main">
+            Nota: La disponibilidad puede quedar en números negativos si el trabajador excede sus días disponibles.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setApprovalDialog(false)}>Cancelar</Button>
+          <Button onClick={() => {
+            setApprovalDialog(false);
+            submitChanges();
+          }} color="primary" variant="contained">
+            Confirmar Aprobación
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de detalles de disponibilidad */}
+      <Dialog open={!!approvalDetails} onClose={() => setApprovalDetails(null)}>
+        <DialogTitle>Detalles de Disponibilidad Actualizada</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography>
+              Días Disponibles: {approvalDetails?.diasDisponibles}
+            </Typography>
+            <Typography>
+              Días Usados: {approvalDetails?.diasUsados}
+            </Typography>
+            <Typography color={approvalDetails?.diasRestantes < 0 ? 'error' : 'success'}>
+              Días Restantes: {approvalDetails?.diasRestantes}
+            </Typography>
+            {approvalDetails?.diasRestantes < 0 && (
+              <Typography color="error" sx={{ mt: 2 }}>
+                Advertencia: El trabajador ha excedido sus días disponibles.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setApprovalDetails(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar}>
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
