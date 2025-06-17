@@ -55,6 +55,7 @@ const CreateLicenciaPage: React.FC = () => {
 
   const [disponibilidad, setDisponibilidad] = useState<number | null>(null);
   const [periodoRenovacion, setPeriodoRenovacion] = useState<string>('');
+  const [codigoTrabajador, setCodigoTrabajador] = useState('');
 
   useEffect(() => {
     dispatch(fetchTrabajadores());
@@ -77,6 +78,15 @@ const CreateLicenciaPage: React.FC = () => {
       setPeriodoRenovacion('');
     }
   }, [formData.trabajador_id, formData.tipo_licencia_id, tiposLicencias, dispatch]);
+
+  useEffect(() => {
+    if (codigoTrabajador.trim() !== '') {
+      const found = trabajadores.find(t => t.codigo.toLowerCase() === codigoTrabajador.trim().toLowerCase());
+      if (found) {
+        setFormData(prev => ({ ...prev, trabajador_id: found.id }));
+      }
+    }
+  }, [codigoTrabajador, trabajadores]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
@@ -145,6 +155,14 @@ const CreateLicenciaPage: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+            <TextField
+              label="Código de trabajador"
+              value={codigoTrabajador}
+              onChange={e => setCodigoTrabajador(e.target.value)}
+              fullWidth
+              autoComplete="off"
+              sx={{ gridColumn: 'span 2' }}
+            />
             <FormControl fullWidth>
               <InputLabel>Trabajador</InputLabel>
               <Select

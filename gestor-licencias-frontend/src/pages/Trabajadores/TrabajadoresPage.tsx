@@ -7,17 +7,24 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  ButtonGroup,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  PictureAsPdf as PdfIcon,
+  TableChart as ExcelIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { fetchTrabajadores, deleteTrabajador } from '../../store/slices/trabajadoresSlice';
+import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 
 const TrabajadoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +32,7 @@ const TrabajadoresPage: React.FC = () => {
   const { items: trabajadores, loading } = useSelector((state: RootState) => state.trabajadores);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const loadTrabajadores = async () => {
@@ -63,6 +71,16 @@ const TrabajadoresPage: React.FC = () => {
       ? new Date(t.fecha_ingreso).toLocaleDateString('es-ES')
       : 'N/A',
   }));
+
+  // Filtrar trabajadores según búsqueda
+  const trabajadoresFiltrados = trabajadoresProcesados.filter((t) => {
+    const term = search.toLowerCase();
+    return (
+      t.nombre_completo.toLowerCase().includes(term) ||
+      t.codigo.toLowerCase().includes(term) ||
+      (t.email && t.email.toLowerCase().includes(term))
+    );
+  });
 
   const columns: GridColDef[] = [
     { field: 'codigo', headerName: 'Código', width: 150 },
@@ -112,6 +130,14 @@ const TrabajadoresPage: React.FC = () => {
     }
   ];
 
+  const handleExportExcel = () => {
+    exportToExcel(trabajadoresProcesados, 'trabajadores');
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(trabajadoresProcesados, 'trabajadores');
+  };
+
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -122,19 +148,51 @@ const TrabajadoresPage: React.FC = () => {
         <Typography variant="h5" component="h1">
           Trabajadores
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/trabajadores/nuevo')}
-        >
-          Nuevo Trabajador
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Buscar trabajador..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 250 }}
+          />
+          <ButtonGroup variant="contained" color="primary">
+            <Button
+              startIcon={<ExcelIcon />}
+              onClick={handleExportExcel}
+              color="success"
+            >
+              Exportar Excel
+            </Button>
+            <Button
+              startIcon={<PdfIcon />}
+              onClick={handleExportPDF}
+              color="error"
+            >
+              Exportar PDF
+            </Button>
+          </ButtonGroup>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/trabajadores/nuevo')}
+          >
+            Nuevo Trabajador
+          </Button>
+        </Box>
       </Box>
 
       <Box sx={{ width: '100%', maxWidth: 1100, mx: 'auto' }}>
         <DataGrid
-          rows={trabajadoresProcesados}
+          rows={trabajadoresFiltrados}
           columns={columns}
           getRowId={(row) => row.id}
           loading={loading}

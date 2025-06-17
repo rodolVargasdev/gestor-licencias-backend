@@ -27,6 +27,7 @@ import CreateLicenciaPage from './pages/Licencias/CreateLicenciaPage';
 import EditLicenciaPage from './pages/Licencias/EditLicenciaPage';
 import LicenciaDetailsPage from './pages/Licencias/LicenciaDetailsPage';
 import DisponibilidadPage from "./pages/Disponibilidad/DisponibilidadPage";
+import EditSolicitudPage from './pages/Solicitudes/EditSolicitudPage';
 
 function App() {
   return (
@@ -80,10 +81,8 @@ function App() {
             <Route path="/disponibilidad" element={<DisponibilidadPage />} />
 
             {/* Rutas de Solicitudes */}
-            {/* Rutas deshabilitadas por simplificación del flujo */}
-            {/* <Route path="/solicitudes" element={<SolicitudesPage />} /> */}
-            {/* <Route path="/solicitudes/crear" element={<CreateSolicitudPage />} /> */}
-            {/* <Route path="/solicitudes/editar/:id" element={<EditSolicitudPage />} /> */}
+            <Route path="/solicitudes/:id/editar" element={<EditSolicitudPage />} />
+
           </Routes>
         </Layout>
       </Router>

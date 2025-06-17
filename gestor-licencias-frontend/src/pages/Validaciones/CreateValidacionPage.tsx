@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { createValidacion } from '../../store/slices/validacionesSlice';
+import { fetchLicencias } from '../../store/slices/licenciasSlice';
 import type { RootState } from '../../store';
 import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem } from '@mui/material';
+import type { AppDispatch } from '../../store';
 
 const estados = ['PENDIENTE', 'APROBADA', 'RECHAZADA', 'CANCELADA'];
 
 const CreateValidacionPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { items: tiposLicencias } = useSelector((state: RootState) => state.tiposLicencias);
   const { items: trabajadores } = useSelector((state: RootState) => state.trabajadores);
@@ -38,6 +40,7 @@ const CreateValidacionPage: React.FC = () => {
     if (!validate()) return;
     try {
       await dispatch(createValidacion({ tipoLicenciaId: Number(tipoLicenciaId), trabajadorId: Number(trabajadorId), fechaInicio, fechaFin, estado, observaciones }) as any).unwrap();
+      await dispatch(fetchLicencias());
       setSnackbar({ open: true, message: 'Solicitud creada correctamente', severity: 'success' });
       setTimeout(() => navigate('/validaciones'), 1000);
     } catch {

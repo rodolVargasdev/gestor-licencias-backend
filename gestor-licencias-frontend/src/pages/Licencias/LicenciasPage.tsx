@@ -5,6 +5,7 @@ import type { RootState, AppDispatch } from '../../store';
 import { fetchSolicitudes, deleteSolicitud } from '../../store/slices/solicitudesSlice';
 import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
+import { fetchLicencias, deleteLicencia } from '../../store/slices/licenciasSlice';
 import {
   Box,
   Button,
@@ -40,15 +41,20 @@ const LicenciasPage: React.FC = () => {
   const { items: solicitudes, loading, error } = useSelector((state: RootState) => state.solicitudes);
   const { items: trabajadores } = useSelector((state: RootState) => state.trabajadores);
   const { items: tiposLicencias } = useSelector((state: RootState) => state.tiposLicencias);
+  const { items: licencias } = useSelector((state: RootState) => state.licencias);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSolicitud, setSelectedSolicitud] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [errorLicencia, setErrorLicencia] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchSolicitudes());
     dispatch(fetchTrabajadores());
     dispatch(fetchTiposLicencias());
-  }, [dispatch]);
+    if (licencias.length === 0) {
+      dispatch(fetchLicencias());
+    }
+  }, [dispatch, licencias.length]);
 
   const handleDeleteClick = (id: number) => {
     setSelectedSolicitud(id);
@@ -58,10 +64,16 @@ const LicenciasPage: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (selectedSolicitud !== null) {
       try {
+        // Buscar la licencia asociada a la solicitud
+        const licencia = licencias.find(l => l.solicitud_id === selectedSolicitud);
+        if (licencia) {
+          await dispatch(deleteLicencia(licencia.id));
+        }
         await dispatch(deleteSolicitud(selectedSolicitud));
-        setSnackbar({ open: true, message: 'Solicitud eliminada correctamente', severity: 'success' });
+        setSnackbar({ open: true, message: 'Solicitud y licencia eliminadas correctamente', severity: 'success' });
+        await dispatch(fetchLicencias());
       } catch {
-        setSnackbar({ open: true, message: 'Error al eliminar la solicitud', severity: 'error' });
+        setSnackbar({ open: true, message: 'Error al eliminar la solicitud o licencia', severity: 'error' });
       }
       setDeleteDialogOpen(false);
       setSelectedSolicitud(null);
@@ -95,6 +107,10 @@ const LicenciasPage: React.FC = () => {
   const getTipoLicenciaNombre = (id: number) => {
     const tipo = tiposLicencias.find(t => t.id === id);
     return tipo ? tipo.nombre : id;
+  };
+
+  const handleEdit = (solicitudId: number) => {
+    navigate(`/solicitudes/${solicitudId}/editar`);
   };
 
   if (loading) {
@@ -160,7 +176,7 @@ const LicenciasPage: React.FC = () => {
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => navigate(`/licencias/${solicitud.id}/editar`)}
+                    onClick={() => handleEdit(solicitud.id!)}
                   >
                     <EditIcon />
                   </IconButton>
@@ -206,6 +222,20 @@ const LicenciasPage: React.FC = () => {
           sx={{ width: '100%' }}
         >
           {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!errorLicencia}
+        autoHideDuration={6000}
+        onClose={() => setErrorLicencia(null)}
+      >
+        <Alert
+          onClose={() => setErrorLicencia(null)}
+          severity="error"
+          sx={{ width: '100%' }}
+        >
+          {errorLicencia}
         </Alert>
       </Snackbar>
     </Box>

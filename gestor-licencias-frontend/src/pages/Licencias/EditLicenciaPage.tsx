@@ -2,23 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../store';
-import { fetchLicenciaById, updateLicencia } from '../../store/slices/licenciasSlice';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  MenuItem,
-  Grid,
-  Paper,
-  Snackbar,
-  Alert
-} from '@mui/material';
+import { fetchLicenciaById, updateLicencia, fetchLicencias } from '../../store/slices/licenciasSlice';
+import { fetchSolicitudes, updateSolicitud } from '../../store/slices/solicitudesSlice';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import InputAdornment from '@mui/material/InputAdornment';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SearchIcon from '@mui/icons-material/Search';
+
+function calcularDiasHabiles(fechaInicio: Date | null, fechaFin: Date | null): number {
+  if (!fechaInicio || !fechaFin) return 0;
+  const start = new Date(fechaInicio);
+  const end = new Date(fechaFin);
+  let count = 0;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) count++; // 0: domingo, 6: sábado
+  }
+  return count;
+}
 
 const EditLicenciaPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +49,8 @@ const EditLicenciaPage: React.FC = () => {
     motivo: '',
     observaciones: '',
     estado: '',
-    motivo_cancelacion: ''
+    motivo_cancelacion: '',
+    dias_habiles: 0
   });
 
   const [snackbar, setSnackbar] = useState({
@@ -44,6 +58,8 @@ const EditLicenciaPage: React.FC = () => {
     message: '',
     severity: 'success' as 'success' | 'error'
   });
+
+  const [codigoTrabajador, setCodigoTrabajador] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -61,10 +77,20 @@ const EditLicenciaPage: React.FC = () => {
         motivo: licencia.motivo,
         observaciones: licencia.observaciones || '',
         estado: licencia.estado,
-        motivo_cancelacion: licencia.motivo_cancelacion || ''
+        motivo_cancelacion: licencia.motivo_cancelacion || '',
+        dias_habiles: calcularDiasHabiles(new Date(licencia.fecha_inicio), new Date(licencia.fecha_fin))
       });
     }
   }, [licencia]);
+
+  useEffect(() => {
+    if (codigoTrabajador.trim() !== '') {
+      const found = trabajadores.find(t => t.codigo.toLowerCase() === codigoTrabajador.trim().toLowerCase());
+      if (found) {
+        setFormData(prev => ({ ...prev, trabajador_id: found.id.toString() }));
+      }
+    }
+  }, [codigoTrabajador, trabajadores]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -75,10 +101,15 @@ const EditLicenciaPage: React.FC = () => {
   };
 
   const handleDateChange = (name: string) => (date: Date | null) => {
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: date
-    }));
+    };
+    // Si cambia fecha_inicio o fecha_fin, recalcula días hábiles
+    const fechaInicio = name === 'fecha_inicio' ? date : newFormData.fecha_inicio;
+    const fechaFin = name === 'fecha_fin' ? date : newFormData.fecha_fin;
+    newFormData.dias_habiles = calcularDiasHabiles(fechaInicio, fechaFin);
+    setFormData(newFormData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,13 +117,36 @@ const EditLicenciaPage: React.FC = () => {
     if (!id) return;
 
     try {
-      await dispatch(updateLicencia({ id: parseInt(id), ...formData }));
+      await dispatch(updateLicencia({
+        id: parseInt(id),
+        ...formData,
+        trabajador_id: Number(formData.trabajador_id),
+        tipo_licencia_id: Number(formData.tipo_licencia_id),
+        fecha_inicio: formData.fecha_inicio ? (formData.fecha_inicio as Date).toISOString().split('T')[0] : '',
+        fecha_fin: formData.fecha_fin ? (formData.fecha_fin as Date).toISOString().split('T')[0] : '',
+        estado: formData.estado as 'ACTIVA' | 'CANCELADA' | 'FINALIZADA' | 'APROBADA',
+      }));
+      if (licencia?.solicitud_id) {
+        await dispatch(updateSolicitud({
+          id: licencia.solicitud_id,
+          trabajador_id: Number(formData.trabajador_id),
+          tipo_licencia_id: Number(formData.tipo_licencia_id),
+          fecha_inicio: formData.fecha_inicio ? (formData.fecha_inicio as Date).toISOString().split('T')[0] : '',
+          fecha_fin: formData.fecha_fin ? (formData.fecha_fin as Date).toISOString().split('T')[0] : '',
+          motivo: formData.motivo,
+          observaciones: formData.observaciones,
+          estado: formData.estado,
+          motivo_cancelacion: formData.motivo_cancelacion,
+        }));
+      }
+      await dispatch(fetchSolicitudes());
+      await dispatch(fetchLicencias());
       setSnackbar({
         open: true,
-        message: 'Licencia actualizada correctamente',
+        message: 'Licencia y solicitud actualizadas correctamente',
         severity: 'success'
       });
-      navigate('/licencias');
+      setTimeout(() => navigate('/licencias'), 300);
     } catch (error) {
       setSnackbar({
         open: true,
@@ -133,6 +187,23 @@ const EditLicenciaPage: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Código de trabajador"
+                value={codigoTrabajador}
+                onChange={e => setCodigoTrabajador(e.target.value)}
+                fullWidth
+                autoComplete="off"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 select
@@ -199,6 +270,17 @@ const EditLicenciaPage: React.FC = () => {
                   }}
                 />
               </LocalizationProvider>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                label="Días Hábiles"
+                name="dias_habiles"
+                value={formData.dias_habiles || ''}
+                fullWidth
+                margin="normal"
+                InputProps={{ readOnly: true }}
+              />
             </Grid>
 
             <Grid item xs={12}>

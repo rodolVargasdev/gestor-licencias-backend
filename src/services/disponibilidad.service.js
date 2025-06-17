@@ -248,12 +248,14 @@ class DisponibilidadService {
     async findByAnio(anio) {
         try {
             return await this.disponibilidadRepository.find({
-                where: {
-                    fecha: Between(new Date(anio, 0, 1), new Date(anio, 11, 31))
-                },
-                relations: ['trabajador', 'licencia', 'solicitud'],
+                relations: ['trabajador', 'tipo_licencia'],
                 order: {
-                    fecha: 'DESC'
+                    trabajador: {
+                        nombre_completo: 'ASC'
+                    },
+                    tipo_licencia: {
+                        nombre: 'ASC'
+                    }
                 }
             });
         } catch (error) {

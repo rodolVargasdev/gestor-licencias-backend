@@ -8,6 +8,9 @@ import { fetchDisponibilidadByTrabajador } from '../../store/slices/disponibilid
 import { trabajadoresService } from '../../services/trabajadores.service';
 import { useDisponibilidadUpdate } from '../../hooks/useDisponibilidadUpdate';
 import type { DisponibilidadTrabajador } from '../../types/disponibilidad';
+import { exportDisponibilidadToExcel, exportDisponibilidadToPDF } from '../../utils/exportDisponibilidad';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableChartIcon from '@mui/icons-material/TableChart';
 
 const DisponibilidadPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -61,6 +64,14 @@ const DisponibilidadPage: React.FC = () => {
     if (trabajadorSeleccionado) {
       dispatch(fetchDisponibilidadByTrabajador(trabajadorSeleccionado));
     }
+  };
+
+  const handleExportExcel = () => {
+    exportDisponibilidadToExcel(disponibilidadFiltrada, 'disponibilidad');
+  };
+
+  const handleExportPDF = () => {
+    exportDisponibilidadToPDF(disponibilidadFiltrada, 'disponibilidad');
   };
 
   const columns: GridColDef[] = [
@@ -141,11 +152,30 @@ const DisponibilidadPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Disponibilidad de Licencias
-      </Typography>
-
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, width: '100%', maxWidth: 1200 }}>
+        <Typography variant="h5" component="h1">
+          Disponibilidad
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<TableChartIcon />}
+            onClick={handleExportExcel}
+          >
+            Exportar Excel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={handleExportPDF}
+          >
+            Exportar PDF
+          </Button>
+        </Box>
+      </Box>
       <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
         <TextField
           label="Buscar por código"

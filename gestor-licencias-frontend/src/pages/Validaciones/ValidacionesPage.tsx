@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { fetchValidaciones, deleteValidacion } from '../../store/slices/validacionesSlice';
+import { fetchLicencias } from '../../store/slices/licenciasSlice';
 import {
   Box,
   Button,
@@ -30,9 +31,10 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
+import type { AppDispatch } from '../../store';
 
 const ValidacionesPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { items: validaciones, loading, error } = useSelector((state: RootState) => state.validaciones);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -52,6 +54,7 @@ const ValidacionesPage: React.FC = () => {
     if (selectedValidacion !== null) {
       try {
         await dispatch(deleteValidacion(selectedValidacion) as any).unwrap();
+        await dispatch(fetchLicencias());
         setSnackbar({ open: true, message: 'Solicitud eliminada correctamente', severity: 'success' });
       } catch {
         setSnackbar({ open: true, message: 'Error al eliminar la solicitud', severity: 'error' });

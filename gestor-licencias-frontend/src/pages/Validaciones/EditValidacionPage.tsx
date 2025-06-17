@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchValidaciones, updateValidacion } from '../../store/slices/validacionesSlice';
+import { fetchLicencias } from '../../store/slices/licenciasSlice';
 import type { RootState } from '../../store';
 import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import type { AppDispatch } from '../../store';
 
 const estados = ['PENDIENTE', 'APROBADA', 'RECHAZADA', 'CANCELADA'];
 
 const EditValidacionPage: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { items: validaciones, loading } = useSelector((state: RootState) => state.validaciones);
@@ -100,6 +102,7 @@ const EditValidacionPage: React.FC = () => {
           : 'Solicitud actualizada correctamente',
         severity: 'success'
       });
+      await dispatch(fetchLicencias());
       setTimeout(() => navigate('/validaciones'), 2000);
     } catch (error) {
       setSnackbar({

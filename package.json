@@ -31,13 +31,16 @@
     "express": "^4.18.2",
     "express-validator": "^7.0.1",
     "helmet": "^7.0.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "morgan": "^1.10.0",
     "pdfkit": "^0.17.1",
     "pg": "^8.16.0",
     "reflect-metadata": "^0.2.2",
     "ts-node": "^10.9.2",
     "typeorm": "^0.3.24",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
