@@ -61,16 +61,25 @@ app.use((err, req, res, next) => {
 });
 
 // Inicializar la base de datos y el servidor
+console.log('Iniciando conexión a la base de datos...');
+console.log('Host:', process.env.DB_HOST);
+console.log('Puerto:', process.env.DB_PORT);
+console.log('Usuario:', process.env.DB_USER);
+console.log('Base de datos:', process.env.DB_NAME);
+
 AppDataSource.initialize()
   .then(() => {
-    console.log('Base de datos conectada');
+    console.log('✅ Base de datos conectada exitosamente');
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Servidor corriendo en el puerto ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Servidor corriendo en http://0.0.0.0:${PORT}`);
+      console.log('Ambiente:', process.env.NODE_ENV);
+      console.log('CORS Origin:', process.env.CORS_ORIGIN);
     });
   })
   .catch(error => {
-    console.error('Error al conectar con la base de datos:', error);
+    console.error('❌ Error al conectar con la base de datos:', error);
+    process.exit(1);
   });
 
 module.exports = app; 
