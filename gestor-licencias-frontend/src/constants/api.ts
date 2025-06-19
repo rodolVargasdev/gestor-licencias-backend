@@ -18,7 +18,8 @@ export const API_ROUTES = {
     BY_TIPO: (tipo: string) => `/api/trabajadores/tipo/${tipo}`,
     BY_DEPARTAMENTO: (departamentoId: number) => `/api/trabajadores/departamento/${departamentoId}`,
     LICENCIAS_ACTIVAS: (id: number) => `/api/trabajadores/${id}/licencias/activas`,
-    LICENCIAS_PERIODO: (id: number) => `/api/trabajadores/${id}/licencias/periodo`
+    LICENCIAS_PERIODO: (id: number) => `/api/trabajadores/${id}/licencias/periodo`,
+    IMPORT: '/api/trabajadores/import'
   },
 
   // Tipos de Licencias

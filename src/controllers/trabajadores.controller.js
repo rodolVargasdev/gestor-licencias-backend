@@ -95,6 +95,29 @@ class TrabajadoresController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    async importFromExcel(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ 
+                    error: 'No se ha proporcionado ningún archivo' 
+                });
+            }
+
+            const results = await trabajadoresService.importFromExcel(req.file.buffer);
+            
+            res.json({
+                success: true,
+                message: `Importación completada. ${results.success} trabajadores importados exitosamente de ${results.total} totales.`,
+                data: results
+            });
+        } catch (error) {
+            res.status(400).json({ 
+                error: error.message,
+                success: false 
+            });
+        }
+    }
 }
 
 module.exports = new TrabajadoresController(); 

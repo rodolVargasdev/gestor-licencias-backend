@@ -18,6 +18,7 @@ import {
   PictureAsPdf as PdfIcon,
   TableChart as ExcelIcon,
   Search as SearchIcon,
+  CloudUpload as ImportIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -25,6 +26,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { fetchTrabajadores, deleteTrabajador } from '../../store/slices/trabajadoresSlice';
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
+import ImportTrabajadoresModal from './components/ImportTrabajadoresModal';
 
 const TrabajadoresPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ const TrabajadoresPage: React.FC = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   useEffect(() => {
     const loadTrabajadores = async () => {
@@ -60,6 +63,11 @@ const TrabajadoresPage: React.FC = () => {
         console.error('Error al eliminar trabajador:', error);
       }
     }
+  };
+
+  const handleImportSuccess = () => {
+    dispatch(fetchTrabajadores());
+    setImportModalOpen(false);
   };
 
   // Procesar los datos para agregar los campos planos
@@ -180,6 +188,14 @@ const TrabajadoresPage: React.FC = () => {
             </Button>
           </ButtonGroup>
           <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<ImportIcon />}
+            onClick={() => setImportModalOpen(true)}
+          >
+            Importar
+          </Button>
+          <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
@@ -215,6 +231,12 @@ const TrabajadoresPage: React.FC = () => {
           }}
         />
       </Box>
+
+      <ImportTrabajadoresModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
 
       <Snackbar
         open={!!errorMessage}
