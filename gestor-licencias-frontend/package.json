@@ -19,7 +19,10 @@
     "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.9.0",
     "date-fns": "^4.1.0",
+    "file-saver": "^2.0.5",
     "formik": "^2.4.6",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "pg": "^8.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -28,10 +31,12 @@
     "recharts": "^2.15.3",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.24",
+    "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/file-saver": "^2.0.7",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.5.2",

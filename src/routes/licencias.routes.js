@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const licenciasController = require('../controllers/licencias.controller');
 
+// ENDPOINT PRINCIPAL PARA LICENCIAS
+// Este endpoint maneja la creación directa de licencias
+// Para solicitudes, usar /api/solicitudes
+
 // Rutas básicas CRUD
 router.post('/', licenciasController.create);
 router.get('/', licenciasController.findAll);

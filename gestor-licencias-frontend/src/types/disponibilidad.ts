@@ -11,4 +11,5 @@ export interface DisponibilidadTrabajador {
   activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  cantidad_registros?: number;
 } 

@@ -52,6 +52,11 @@ module.exports = new EntitySchema({
         fecha_decision: {
             type: 'timestamp',
             nullable: true
+        },
+        tipo_olvido_marcacion: {
+            type: 'enum',
+            enum: ['ENTRADA', 'SALIDA'],
+            nullable: true
         }
     },
     relations: {

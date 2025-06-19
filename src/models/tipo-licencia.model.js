@@ -24,21 +24,21 @@ const TipoLicencia = new EntitySchema({
             type: 'text',
             nullable: true
         },
-        tipo_duracion: {
-            type: 'enum',
-            enum: ['DIAS', 'HORAS', 'CANTIDAD'],
-            default: 'DIAS',
-            nullable: false
-        },
-        periodo_renovacion: {
-            type: 'enum',
-            enum: ['MENSUAL', 'ANUAL'],
-            default: 'ANUAL',
-            nullable: false
-        },
         duracion_maxima: {
             type: 'int',
             default: 0,
+            nullable: false
+        },
+        unidad_control: {
+            type: 'enum',
+            enum: ['horas', 'días', 'ninguno'],
+            default: 'días',
+            nullable: false
+        },
+        periodo_control: {
+            type: 'enum',
+            enum: ['mes', 'año', 'ninguno'],
+            default: 'año',
             nullable: false
         },
         requiere_justificacion: {

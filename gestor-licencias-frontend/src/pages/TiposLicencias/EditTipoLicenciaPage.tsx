@@ -27,8 +27,6 @@ interface TipoLicenciaFormData {
   codigo: string;
   nombre: string;
   descripcion: string;
-  tipo_duracion: 'DIAS' | 'HORAS' | 'CANTIDAD';
-  periodo_renovacion: 'MENSUAL' | 'ANUAL';
   duracion_maxima: number;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;
@@ -50,6 +48,8 @@ interface TipoLicenciaFormData {
   aplica_tipo_personal: boolean;
   tipos_personal_aplicables: string[];
   activo: boolean;
+  unidad_control: 'días' | 'horas' | 'ninguno';
+  periodo_control: 'mes' | 'año' | 'ninguno';
 }
 
 const EditTipoLicenciaPage: React.FC = () => {
@@ -63,8 +63,6 @@ const EditTipoLicenciaPage: React.FC = () => {
     codigo: '',
     nombre: '',
     descripcion: '',
-    tipo_duracion: 'DIAS',
-    periodo_renovacion: 'ANUAL',
     duracion_maxima: 0,
     requiere_justificacion: false,
     requiere_aprobacion_especial: false,
@@ -85,7 +83,9 @@ const EditTipoLicenciaPage: React.FC = () => {
     cargos_aplicables: [],
     aplica_tipo_personal: false,
     tipos_personal_aplicables: [],
-    activo: true
+    activo: true,
+    unidad_control: 'ninguno',
+    periodo_control: 'ninguno'
   });
 
   const [snackbar, setSnackbar] = useState({ 
@@ -108,8 +108,6 @@ const EditTipoLicenciaPage: React.FC = () => {
         codigo: tipoLicencia.codigo || '',
         nombre: tipoLicencia.nombre || '',
         descripcion: tipoLicencia.descripcion || '',
-        tipo_duracion: tipoLicencia.tipo_duracion || 'DIAS',
-        periodo_renovacion: tipoLicencia.periodo_renovacion || 'ANUAL',
         duracion_maxima: tipoLicencia.duracion_maxima || 0,
         requiere_justificacion: tipoLicencia.requiere_justificacion || false,
         requiere_aprobacion_especial: tipoLicencia.requiere_aprobacion_especial || false,
@@ -130,7 +128,9 @@ const EditTipoLicenciaPage: React.FC = () => {
         cargos_aplicables: Array.isArray(tipoLicencia.cargos_aplicables) ? tipoLicencia.cargos_aplicables : [],
         aplica_tipo_personal: tipoLicencia.aplica_tipo_personal || false,
         tipos_personal_aplicables: Array.isArray(tipoLicencia.tipos_personal_aplicables) ? tipoLicencia.tipos_personal_aplicables : [],
-        activo: tipoLicencia.activo ?? true
+        activo: tipoLicencia.activo ?? true,
+        unidad_control: tipoLicencia.unidad_control || 'ninguno',
+        periodo_control: tipoLicencia.periodo_control || 'ninguno'
       });
     }
   }, [tipoLicencia]);
@@ -234,33 +234,34 @@ const EditTipoLicenciaPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>Configuración de Duración</Typography>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                 <FormControl fullWidth>
-                  <InputLabel>Tipo de Duración</InputLabel>
+                  <InputLabel>Unidad de Control</InputLabel>
                   <Select
-                    name="tipo_duracion"
-                    value={formData.tipo_duracion}
+                    name="unidad_control"
+                    value={formData.unidad_control}
                     onChange={handleChange}
-                    label="Tipo de Duración"
+                    label="Unidad de Control"
                   >
-                    <MenuItem value="DIAS">Días</MenuItem>
-                    <MenuItem value="HORAS">Horas</MenuItem>
-                    <MenuItem value="CANTIDAD">Cantidad</MenuItem>
+                    <MenuItem value="días">Días</MenuItem>
+                    <MenuItem value="horas">Horas</MenuItem>
+                    <MenuItem value="ninguno">Ninguno</MenuItem>
                   </Select>
                 </FormControl>
                 <FormControl fullWidth>
-                  <InputLabel>Período de Renovación</InputLabel>
+                  <InputLabel>Período de Control</InputLabel>
                   <Select
-                    name="periodo_renovacion"
-                    value={formData.periodo_renovacion}
+                    name="periodo_control"
+                    value={formData.periodo_control}
                     onChange={handleChange}
-                    label="Período de Renovación"
+                    label="Período de Control"
                   >
-                    <MenuItem value="MENSUAL">Mensual</MenuItem>
-                    <MenuItem value="ANUAL">Anual</MenuItem>
+                    <MenuItem value="mes">Mes</MenuItem>
+                    <MenuItem value="año">Año</MenuItem>
+                    <MenuItem value="ninguno">Ninguno</MenuItem>
                   </Select>
                 </FormControl>
           <TextField
                   name="duracion_maxima"
-                  label={`Duración Máxima (${formData.tipo_duracion.toLowerCase()})`}
+                  label="Duración Máxima"
                   type="number"
                   value={formData.duracion_maxima}
                   onChange={handleChange}

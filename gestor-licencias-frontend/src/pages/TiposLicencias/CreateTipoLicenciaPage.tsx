@@ -25,7 +25,6 @@ interface TipoLicenciaFormData {
   codigo: string;
   nombre: string;
   descripcion: string;
-  tipo_duracion: 'DIAS' | 'HORAS' | 'CANTIDAD';
   duracion_maxima: number;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;
@@ -47,6 +46,8 @@ interface TipoLicenciaFormData {
   aplica_tipo_personal: boolean;
   tipos_personal_aplicables: string[];
   activo: boolean;
+  unidad_control?: string;
+  periodo_control?: string;
 }
 
 const CreateTipoLicenciaPage: React.FC = () => {
@@ -57,7 +58,6 @@ const CreateTipoLicenciaPage: React.FC = () => {
     codigo: '',
     nombre: '',
     descripcion: '',
-    tipo_duracion: 'DIAS',
     duracion_maxima: 0,
     requiere_justificacion: false,
     requiere_aprobacion_especial: false,
@@ -98,19 +98,12 @@ const CreateTipoLicenciaPage: React.FC = () => {
     if (!formData.codigo.trim()) {
       newErrors.codigo = 'El código es obligatorio';
     }
-    if (!formData.duracion_maxima || isNaN(Number(formData.duracion_maxima)) || Number(formData.duracion_maxima) <= 0) {
-      newErrors.duracion_maxima = 'La duración máxima debe ser un número positivo';
-    }
-    if (formData.aplica_antiguedad && (!formData.antiguedad_minima || Number(formData.antiguedad_minima) <= 0)) {
-      newErrors.antiguedad_minima = 'La antigüedad mínima debe ser un número positivo';
-    }
-    if (formData.aplica_edad) {
-      if (!formData.edad_minima || Number(formData.edad_minima) < 0) {
-        newErrors.edad_minima = 'La edad mínima debe ser un número no negativo';
-      }
-      if (!formData.edad_maxima || Number(formData.edad_maxima) <= Number(formData.edad_minima)) {
-        newErrors.edad_maxima = 'La edad máxima debe ser mayor que la mínima';
-      }
+    if (!formData.duracion_maxima || isNaN(Number(formData.duracion_maxima))) {
+      newErrors.duracion_maxima = 'La duración máxima debe ser un número válido';
+    } else if (Number(formData.duracion_maxima) < 0) {
+      newErrors.duracion_maxima = 'La duración máxima no puede ser negativa';
+    } else if (Number(formData.duracion_maxima) === 0 && formData.periodo_control !== 'ninguno') {
+      newErrors.duracion_maxima = 'La duración máxima debe ser mayor a 0 cuando hay período de control';
     }
     if (formData.dias_minimos_por_vez && (isNaN(Number(formData.dias_minimos_por_vez)) || Number(formData.dias_minimos_por_vez) < 0)) {
       newErrors.dias_minimos_por_vez = 'Los días mínimos por vez deben ser un número no negativo';
@@ -207,33 +200,17 @@ const CreateTipoLicenciaPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo de Duración</InputLabel>
-                <Select
-                  name="tipo_duracion"
-                  value={formData.tipo_duracion}
-                  onChange={handleChange}
-                  label="Tipo de Duración"
-                >
-                  <MenuItem value="DIAS">Días</MenuItem>
-                  <MenuItem value="HORAS">Horas</MenuItem>
-                  <MenuItem value="CANTIDAD">Cantidad</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
               <TextField
                 name="duracion_maxima"
-                label={`Duración Máxima (${formData.tipo_duracion.toLowerCase()})`}
+                label="Duración Máxima"
                 value={formData.duracion_maxima}
                 onChange={handleChange}
                 fullWidth
                 required
                 error={!!errors.duracion_maxima}
-                helperText={errors.duracion_maxima}
+                helperText={errors.duracion_maxima || (formData.periodo_control === 'ninguno' ? 'Puede ser 0 para tiempo indefinido' : '')}
                 type="number"
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 0 }}
               />
             </Grid>
 
@@ -369,36 +346,6 @@ const CreateTipoLicenciaPage: React.FC = () => {
                 }
                 label="Aplicar por Edad"
               />
-              {formData.aplica_edad && (
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={6}>
-                    <TextField
-                      name="edad_minima"
-                      label="Edad Mínima"
-                      type="number"
-                      value={formData.edad_minima}
-                      onChange={handleChange}
-                      fullWidth
-                      error={!!errors.edad_minima}
-                      helperText={errors.edad_minima}
-                      inputProps={{ min: 0 }}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      name="edad_maxima"
-                      label="Edad Máxima"
-                      type="number"
-                      value={formData.edad_maxima}
-                      onChange={handleChange}
-                      fullWidth
-                      error={!!errors.edad_maxima}
-                      helperText={errors.edad_maxima}
-                      inputProps={{ min: 0 }}
-                    />
-                  </Grid>
-                </Grid>
-              )}
             </Grid>
 
             {/* Límites de Uso */}
@@ -565,6 +512,46 @@ const CreateTipoLicenciaPage: React.FC = () => {
                 }
                 label="Activo"
               />
+            </Grid>
+
+            {/* Unidad de Control */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Unidad de Control</InputLabel>
+                <Select
+                  name="unidad_control"
+                  value={formData.unidad_control || ''}
+                  onChange={handleChange}
+                  label="Unidad de Control"
+                >
+                  <MenuItem value="días">Días</MenuItem>
+                  <MenuItem value="horas">Horas</MenuItem>
+                  <MenuItem value="ninguno">Ninguno (solo registro)</MenuItem>
+                </Select>
+                <FormHelperText>
+                  Indica si la disponibilidad se controla por días, horas o solo registro (sin control).
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+
+            {/* Período de Control */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Período de Control</InputLabel>
+                <Select
+                  name="periodo_control"
+                  value={formData.periodo_control || ''}
+                  onChange={handleChange}
+                  label="Período de Control"
+                >
+                  <MenuItem value="mes">Mensual</MenuItem>
+                  <MenuItem value="año">Anual</MenuItem>
+                  <MenuItem value="ninguno">Ninguno</MenuItem>
+                </Select>
+                <FormHelperText>
+                  Indica cada cuánto se renueva la disponibilidad del permiso/licencia para el trabajador.
+                </FormHelperText>
+              </FormControl>
             </Grid>
 
             {/* Botones de Acción */}

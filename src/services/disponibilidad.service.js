@@ -153,31 +153,53 @@ class DisponibilidadService {
                     relations: ['trabajador', 'tipo_licencia']
                 });
 
+                // Valor máximo en la unidad correcta
+                const valorMaximo = tipoLicencia.duracion_maxima;
+
                 if (!disponibilidad) {
                     // Si no existe, crear una nueva disponibilidad
                     disponibilidad = this.disponibilidadRepository.create({
                         trabajador_id: trabajadorId,
                         tipo_licencia_id: tipoLicencia.id,
-                        dias_disponibles: tipoLicencia.duracion_maxima,
+                        dias_disponibles: valorMaximo, // Puede ser horas o días según la unidad
                         dias_usados: 0,
-                        dias_restantes: tipoLicencia.duracion_maxima
+                        dias_restantes: valorMaximo
                     });
                     await this.disponibilidadRepository.save(disponibilidad);
                 }
 
-                // Calcular días usados basado en las licencias activas
+                // Calcular usados en la unidad correcta
                 const licenciasActivas = trabajador.licencias.filter(licencia => 
                     licencia.tipo_licencia_id === tipoLicencia.id && 
                     licencia.estado === 'ACTIVA'
                 );
 
-                const diasUsados = licenciasActivas.reduce((total, licencia) => 
-                    total + licencia.dias_habiles, 0
-                );
+                let usados = 0;
+                if (tipoLicencia.unidad_control === 'horas') {
+                    // Para licencias por horas, usar el campo horas_totales
+                    usados = licenciasActivas.reduce((total, licencia) => {
+                        return total + (parseFloat(licencia.horas_totales) || 0);
+                    }, 0);
+                } else {
+                    usados = licenciasActivas.reduce((total, licencia) => {
+                        const inicio = new Date(licencia.fecha_inicio);
+                        const fin = new Date(licencia.fecha_fin);
+                        return total + (Math.floor((fin - inicio) / (1000 * 60 * 60 * 24)) + 1); // días
+                    }, 0);
+                }
 
-                // Actualizar la disponibilidad
-                disponibilidad.dias_usados = diasUsados;
-                disponibilidad.dias_restantes = disponibilidad.dias_disponibles - diasUsados;
+                disponibilidad.dias_usados = usados;
+                disponibilidad.dias_restantes = disponibilidad.dias_disponibles - usados;
+                // Agregar cantidad_registros si periodo_control es 'ninguno'
+                if (tipoLicencia.periodo_control === 'ninguno') {
+                    disponibilidad.cantidad_registros = licenciasActivas.length;
+                    // Para tipos sin período, mostrar información especial
+                    if (tipoLicencia.duracion_maxima === 0) {
+                        disponibilidad.dias_disponibles = 0;
+                        disponibilidad.dias_restantes = 0;
+                        disponibilidad.dias_usados = usados;
+                    }
+                }
                 await this.disponibilidadRepository.save(disponibilidad);
 
                 return disponibilidad;

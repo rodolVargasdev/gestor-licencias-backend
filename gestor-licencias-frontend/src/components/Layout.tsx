@@ -55,7 +55,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Departamentos', icon: <BusinessIcon />, path: '/departamentos' },
     { text: 'Puestos', icon: <WorkIcon />, path: '/puestos' },
     // { text: 'Validaciones', icon: <CheckCircleIcon />, path: '/validaciones' },
-    { text: 'Configuración', icon: <SettingsIcon />, path: '/configuracion' }
+    // { text: 'Configuración', icon: <SettingsIcon />, path: '/configuracion' }
   ];
 
   const drawer = (

@@ -66,23 +66,49 @@ const TiposLicenciasPage: React.FC = () => {
     <Chip label={label} size="small" color={color} sx={{ mr: 0.5 }} />
   );
 
-  const renderRestricciones = (tipo: any) => {
-    const restricciones = [];
-    if (tipo.aplica_genero) restricciones.push(`Género: ${tipo.genero_aplicable === 'M' ? 'Masculino' : 'Femenino'}`);
-    if (tipo.aplica_antiguedad) restricciones.push(`Antigüedad mínima: ${tipo.antiguedad_minima} años`);
-    if (tipo.aplica_edad) restricciones.push(`Edad: ${tipo.edad_minima}-${tipo.edad_maxima} años`);
-    return restricciones.join(', ');
+  const renderConfiguracion = (tipo: any) => {
+    const configuraciones = [];
+    
+    // Características principales
+    if (tipo.requiere_justificacion) configuraciones.push('Requiere justificación');
+    if (tipo.requiere_aprobacion_especial) configuraciones.push('Requiere aprobación especial');
+    if (tipo.requiere_documentacion) configuraciones.push('Requiere documentación');
+    if (tipo.pago_haberes) configuraciones.push('Pago de haberes');
+    if (tipo.acumulable) configuraciones.push('Acumulable');
+    if (tipo.transferible) configuraciones.push('Transferible');
+    
+    // Restricciones
+    if (tipo.aplica_genero) configuraciones.push(`Género: ${tipo.genero_aplicable === 'M' ? 'Masculino' : tipo.genero_aplicable === 'F' ? 'Femenino' : 'Ambos'}`);
+    if (tipo.aplica_antiguedad) configuraciones.push(`Antigüedad mín: ${tipo.antiguedad_minima} años`);
+    if (tipo.aplica_edad) configuraciones.push(`Edad: ${tipo.edad_minima}-${tipo.edad_maxima} años`);
+    
+    return configuraciones;
   };
 
-  const renderCaracteristicas = (tipo: any) => {
-    const caracteristicas = [];
-    if (tipo.requiere_justificacion) caracteristicas.push('Requiere justificación');
-    if (tipo.requiere_aprobacion_especial) caracteristicas.push('Requiere aprobación especial');
-    if (tipo.requiere_documentacion) caracteristicas.push('Requiere documentación');
-    if (tipo.pago_haberes) caracteristicas.push('Pago de haberes');
-    if (tipo.acumulable) caracteristicas.push('Acumulable');
-    if (tipo.transferible) caracteristicas.push('Transferible');
-    return caracteristicas;
+  const renderPeriodoControl = (periodo: string) => {
+    switch (periodo) {
+      case 'mes':
+        return 'Mensual';
+      case 'año':
+        return 'Anual';
+      case 'ninguno':
+        return 'Sin período';
+      default:
+        return periodo;
+    }
+  };
+
+  const renderUnidadControl = (unidad: string) => {
+    switch (unidad) {
+      case 'días':
+        return 'Por días';
+      case 'horas':
+        return 'Por horas';
+      case 'ninguno':
+        return 'Solo registro';
+      default:
+        return unidad;
+    }
   };
 
   return (
@@ -94,19 +120,20 @@ const TiposLicenciasPage: React.FC = () => {
         </Button>
       </Box>
       <Paper>
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxHeight: 600, overflow: 'auto' }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Código</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Duración</TableCell>
-                <TableCell>Restricciones</TableCell>
-                <TableCell>Características</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
+                <TableCell sx={{ minWidth: 30 }}>ID</TableCell>
+                <TableCell sx={{ minWidth: 50 }}>Código</TableCell>
+                <TableCell sx={{ minWidth: 75 }}>Nombre</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>Descripción</TableCell>
+                <TableCell sx={{ minWidth: 60 }}>Unidad de Control</TableCell>
+                <TableCell sx={{ minWidth: 60 }}>Período de Control</TableCell>
+                <TableCell sx={{ minWidth: 60 }}>Duración Máxima</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>Configuración</TableCell>
+                <TableCell sx={{ minWidth: 40 }}>Estado</TableCell>
+                <TableCell sx={{ minWidth: 50 }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -117,25 +144,32 @@ const TiposLicenciasPage: React.FC = () => {
                   <TableCell>{tipo.nombre}</TableCell>
                   <TableCell>
                     <Tooltip title={tipo.descripcion}>
-                      <Typography noWrap sx={{ maxWidth: 200 }}>
+                      <Typography noWrap sx={{ maxWidth: 90 }}>
                         {tipo.descripcion}
                       </Typography>
                     </Tooltip>
                   </TableCell>
                   <TableCell>
-                    {tipo.duracion_maxima} {tipo.tipo_duracion.toLowerCase()}
+                    <Chip 
+                      label={renderUnidadControl(tipo.unidad_control)} 
+                      size="small" 
+                      color={tipo.unidad_control === 'ninguno' ? 'default' : 'primary'}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Tooltip title={renderRestricciones(tipo)}>
-                      <Typography noWrap sx={{ maxWidth: 200 }}>
-                        {renderRestricciones(tipo)}
-                      </Typography>
-                    </Tooltip>
+                    <Chip 
+                      label={renderPeriodoControl(tipo.periodo_control)} 
+                      size="small" 
+                      color={tipo.periodo_control === 'ninguno' ? 'default' : 'secondary'}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {renderCaracteristicas(tipo).map((caracteristica, index) => (
-                        <Chip key={index} label={caracteristica} size="small" color="primary" />
+                    {tipo.unidad_control !== 'ninguno' ? `${tipo.duracion_maxima} ${tipo.unidad_control}` : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 140 }}>
+                      {renderConfiguracion(tipo).map((config, index) => (
+                        <Chip key={index} label={config} size="small" color="info" />
                       ))}
                     </Box>
                   </TableCell>

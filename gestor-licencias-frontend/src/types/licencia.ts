@@ -12,6 +12,7 @@ export interface Licencia {
   dias_totales: number;
   dias_habiles: number;
   dias_calendario: number;
+  horas_totales?: number;
   estado: 'ACTIVA' | 'CANCELADA' | 'FINALIZADA' | 'APROBADA';
   motivo: string;
   observaciones?: string;
@@ -24,6 +25,7 @@ export interface Licencia {
   fecha_aprobacion?: string;
   justificacion?: string;
   documento?: File;
+  tipo_olvido_marcacion?: 'ENTRADA' | 'SALIDA';
   
   // Relaciones
   solicitud?: Solicitud;

@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Box, Typography, TextField, InputAdornment, Button, Tooltip } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  InputAdornment, 
+  Button, 
+  Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
+} from '@mui/material';
 import { Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
 import type { AppDispatch, RootState } from '../../store';
@@ -18,6 +29,7 @@ const DisponibilidadPage: React.FC = () => {
   const [codigoBusqueda, setCodigoBusqueda] = useState('');
   const [trabajadorSeleccionado, setTrabajadorSeleccionado] = useState<number | null>(null);
   const [disponibilidadFiltrada, setDisponibilidadFiltrada] = useState<DisponibilidadTrabajador[]>([]);
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Efecto para buscar trabajador por código
   useEffect(() => {
@@ -66,12 +78,31 @@ const DisponibilidadPage: React.FC = () => {
     }
   };
 
+  // Funciones de exportación
+  const handleExportMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+  };
+
   const handleExportExcel = () => {
-    exportDisponibilidadToExcel(disponibilidadFiltrada, 'disponibilidad');
+    const trabajador = disponibilidadFiltrada[0]?.trabajador;
+    const title = trabajador 
+      ? `Disponibilidad - ${trabajador.nombre_completo} (${trabajador.codigo})`
+      : 'Reporte de Disponibilidad';
+    exportDisponibilidadToExcel(disponibilidadFiltrada, title);
+    handleExportMenuClose();
   };
 
   const handleExportPDF = () => {
-    exportDisponibilidadToPDF(disponibilidadFiltrada, 'disponibilidad');
+    const trabajador = disponibilidadFiltrada[0]?.trabajador;
+    const title = trabajador 
+      ? `Disponibilidad - ${trabajador.nombre_completo} (${trabajador.codigo})`
+      : 'Reporte de Disponibilidad';
+    exportDisponibilidadToPDF(disponibilidadFiltrada, title);
+    handleExportMenuClose();
   };
 
   const columns: GridColDef[] = [
@@ -100,51 +131,138 @@ const DisponibilidadPage: React.FC = () => {
       )
     },
     { 
-      field: 'periodoRenovacion', 
-      headerName: 'Período', 
-      width: 100, 
-      renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => (
-        <span>{params.row?.tipo_licencia?.periodo_renovacion === 'MENSUAL' ? 'Mensual' : 'Anual'}</span>
-      )
+      field: 'unidadControl', 
+      headerName: 'Unidad de Control', 
+      width: 120, 
+      renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
+        const unidad = params.row?.tipo_licencia?.unidad_control;
+        if (!unidad) return <span>-</span>;
+        
+        switch (unidad) {
+          case 'días':
+            return <span style={{ color: '#1976d2' }}>Por días</span>;
+          case 'horas':
+            return <span style={{ color: '#2e7d32' }}>Por horas</span>;
+          case 'ninguno':
+            return <span style={{ color: '#666' }}>Solo registro</span>;
+          default:
+            return <span>{unidad}</span>;
+        }
+      }
+    },
+    { 
+      field: 'periodoControl', 
+      headerName: 'Período de Control', 
+      width: 130, 
+      renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
+        const periodo = params.row?.tipo_licencia?.periodo_control;
+        if (!periodo) return <span>-</span>;
+        
+        switch (periodo) {
+          case 'mes':
+            return <span style={{ color: '#ed6c02' }}>Mensual</span>;
+          case 'año':
+            return <span style={{ color: '#9c27b0' }}>Anual</span>;
+          case 'ninguno':
+            return <span style={{ color: '#666' }}>Sin período</span>;
+          default:
+            return <span>{periodo}</span>;
+        }
+      }
+    },
+    { 
+      field: 'duracionMaxima', 
+      headerName: 'Duración Máxima', 
+      width: 120, 
+      renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
+        const duracion = params.row?.tipo_licencia?.duracion_maxima;
+        const unidad = params.row?.tipo_licencia?.unidad_control;
+        
+        if (!duracion || unidad === 'ninguno') return <span>-</span>;
+        
+        return <span>{duracion} {unidad}</span>;
+      }
     },
     { 
       field: 'dias_disponibles', 
-      headerName: 'Días Disponibles', 
-      width: 180, 
+      headerName: 'Disponible', 
+      width: 120, 
       type: 'number',
       renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
-        const horas = params.row.dias_disponibles * 8;
-        return (
-          <span>
-            {params.row.dias_disponibles} días ({horas} horas)
-          </span>
-        );
+        const unidad = params.row?.tipo_licencia?.unidad_control;
+        const periodo = params.row?.tipo_licencia?.periodo_control;
+        const duracion = params.row?.tipo_licencia?.duracion_maxima;
+        const valor = params.row.dias_disponibles;
+        
+        if (periodo === 'ninguno' && duracion === 0) {
+          return <span style={{ color: '#666' }}>Sin límite</span>;
+        } else if (unidad === 'horas') {
+          return <span style={{ color: '#2e7d32', fontWeight: 'bold' }}>{valor} horas</span>;
+        } else if (unidad === 'días') {
+          return <span style={{ color: '#1976d2', fontWeight: 'bold' }}>{valor} días</span>;
+        } else {
+          return <span style={{ color: '#666' }}>N/A</span>;
+        }
       }
     },
     { 
       field: 'dias_usados', 
-      headerName: 'Días Usados', 
-      width: 180, 
+      headerName: 'Usado', 
+      width: 100, 
       type: 'number',
       renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
-        const horas = params.row.dias_usados * 8;
-        return (
-          <span>
-            {params.row.dias_usados} días ({horas} horas)
-          </span>
-        );
+        const unidad = params.row?.tipo_licencia?.unidad_control;
+        const periodo = params.row?.tipo_licencia?.periodo_control;
+        const valor = params.row.dias_usados;
+        const cantidadRegistros = params.row.cantidad_registros;
+        if (periodo === 'ninguno') {
+          return <span style={{ color: '#666' }}>Sin límite, usados: {valor} días{cantidadRegistros !== undefined ? ` en ${cantidadRegistros} registros` : ''}</span>;
+        }
+        if (unidad === 'horas') {
+          return <span style={{ color: '#d32f2f' }}>{valor} horas</span>;
+        } else if (unidad === 'días') {
+          return <span style={{ color: '#d32f2f' }}>{valor} días</span>;
+        } else {
+          return <span style={{ color: '#666' }}>N/A</span>;
+        }
       }
     },
     { 
       field: 'dias_restantes', 
-      headerName: 'Días Restantes', 
-      width: 180, 
+      headerName: 'Restante', 
+      width: 120, 
       type: 'number',
       renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
-        const horas = params.row.dias_restantes * 8;
+        const unidad = params.row?.tipo_licencia?.unidad_control;
+        const periodo = params.row?.tipo_licencia?.periodo_control;
+        const duracion = params.row?.tipo_licencia?.duracion_maxima;
+        const valor = params.row.dias_restantes;
+        
+        if (periodo === 'ninguno' && duracion === 0) {
+          return <span style={{ color: '#666' }}>Sin límite</span>;
+        } else if (unidad === 'horas') {
+          const color = valor > 0 ? '#2e7d32' : '#d32f2f';
+          return <span style={{ color, fontWeight: 'bold' }}>{valor} horas</span>;
+        } else if (unidad === 'días') {
+          const color = valor > 0 ? '#2e7d32' : '#d32f2f';
+          return <span style={{ color, fontWeight: 'bold' }}>{valor} días</span>;
+        } else {
+          return <span style={{ color: '#666' }}>N/A</span>;
+        }
+      }
+    },
+    { 
+      field: 'estado', 
+      headerName: 'Estado', 
+      width: 100, 
+      renderCell: (params: GridRenderCellParams<DisponibilidadTrabajador>) => {
+        const activo = params.row.activo;
         return (
-          <span>
-            {params.row.dias_restantes} días ({horas} horas)
+          <span style={{ 
+            color: activo ? '#2e7d32' : '#d32f2f',
+            fontWeight: 'bold'
+          }}>
+            {activo ? 'Activo' : 'Inactivo'}
           </span>
         );
       }
@@ -162,17 +280,9 @@ const DisponibilidadPage: React.FC = () => {
             variant="contained"
             color="success"
             startIcon={<TableChartIcon />}
-            onClick={handleExportExcel}
+            onClick={handleExportMenuOpen}
           >
-            Exportar Excel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<PictureAsPdfIcon />}
-            onClick={handleExportPDF}
-          >
-            Exportar PDF
+            Exportar
           </Button>
         </Box>
       </Box>
@@ -217,6 +327,25 @@ const DisponibilidadPage: React.FC = () => {
           }}
         />
       </Box>
+
+      <Menu
+        anchorEl={exportMenuAnchor}
+        open={Boolean(exportMenuAnchor)}
+        onClose={handleExportMenuClose}
+      >
+        <MenuItem onClick={handleExportExcel}>
+          <ListItemIcon>
+            <TableChartIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Exportar a Excel</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleExportPDF}>
+          <ListItemIcon>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Exportar a PDF</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

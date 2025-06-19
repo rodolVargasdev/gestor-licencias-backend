@@ -58,6 +58,8 @@ const LicenciaDetailsPage: React.FC = () => {
     return <Typography>No se encontró la licencia</Typography>;
   }
 
+  const esPorHoras = (licencia.tipo_licencia && (licencia.tipo_licencia as import('../../types/tipoLicencia').TipoLicencia).unidad_control === 'horas');
+
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -130,32 +132,43 @@ const LicenciaDetailsPage: React.FC = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Días Totales
-            </Typography>
-            <Typography variant="body1">
-              {licencia.dias_totales}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Días Hábil
-            </Typography>
-            <Typography variant="body1">
-              {licencia.dias_habiles}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Días Calendario
-            </Typography>
-            <Typography variant="body1">
-              {licencia.dias_calendario}
-            </Typography>
-          </Grid>
+          {esPorHoras ? (
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Horas Totales
+              </Typography>
+              <Typography variant="body1">
+                {licencia.horas_totales !== undefined ? Number(licencia.horas_totales).toFixed(2) : '-'}
+              </Typography>
+            </Grid>
+          ) : (
+            <>
+              <Grid item xs={12} md={4}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Días Totales
+                </Typography>
+                <Typography variant="body1">
+                  {esPorHoras ? (licencia.horas_totales !== undefined ? Number(licencia.horas_totales).toFixed(2) : '-') : licencia.dias_totales}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Días Hábil
+                </Typography>
+                <Typography variant="body1">
+                  {licencia.dias_habiles}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Días Calendario
+                </Typography>
+                <Typography variant="body1">
+                  {licencia.dias_calendario}
+                </Typography>
+              </Grid>
+            </>
+          )}
 
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />

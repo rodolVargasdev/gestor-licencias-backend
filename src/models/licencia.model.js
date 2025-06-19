@@ -34,6 +34,12 @@ module.exports = new EntitySchema({
         dias_calendario: {
             type: 'int'
         },
+        horas_totales: {
+            type: 'decimal',
+            precision: 10,
+            scale: 2,
+            default: 0
+        },
         estado: {
             type: 'enum',
             enum: ['ACTIVA', 'FINALIZADA', 'CANCELADA']
@@ -57,6 +63,23 @@ module.exports = new EntitySchema({
         fecha_actualizacion: {
             type: 'timestamp',
             updateDate: true
+        },
+        fecha_no_asiste: {
+            type: 'date',
+            nullable: true
+        },
+        fecha_si_asiste: {
+            type: 'date',
+            nullable: true
+        },
+        trabajador_cambio_id: {
+            type: 'int',
+            nullable: true
+        },
+        tipo_olvido_marcacion: {
+            type: 'enum',
+            enum: ['ENTRADA', 'SALIDA'],
+            nullable: true
         }
     },
     relations: {
