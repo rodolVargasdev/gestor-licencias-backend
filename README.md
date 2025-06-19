@@ -1,120 +1,111 @@
-# Sistema de Gestión de Licencias
+# Gestor de Licencias - Sistema Completo
 
-Sistema completo para la gestión de licencias, desarrollado con una arquitectura moderna y tecnologías actuales.
+Sistema completo de gestión de licencias que incluye una API REST (backend) y una aplicación web (frontend) para administrar licencias de empleados, departamentos, puestos y solicitudes.
 
-## 🏗️ Arquitectura
+## 🏗️ Estructura del Proyecto
 
-El proyecto está dividido en dos partes principales:
+```
+gestor-licencias-api/
+├── src/                    # Backend API (Node.js + Express)
+│   ├── controllers/        # Controladores de la API
+│   ├── models/            # Modelos de datos
+│   ├── routes/            # Rutas de la API
+│   ├── services/          # Servicios de negocio
+│   ├── config/            # Configuración (DB, migraciones)
+│   └── app.js             # Punto de entrada del servidor
+├── gestor-licencias-frontend/  # Frontend (React + TypeScript)
+│   ├── src/
+│   │   ├── components/    # Componentes React
+│   │   ├── pages/         # Páginas de la aplicación
+│   │   ├── services/      # Servicios de API
+│   │   ├── store/         # Redux store
+│   │   └── types/         # Tipos TypeScript
+│   └── package.json
+└── README.md
+```
 
-### Backend (API REST)
-- **Tecnologías**: Node.js, Express, TypeScript, TypeORM, PostgreSQL
-- **Patrón**: Arquitectura en capas (Controllers, Services, Repositories)
-- **Características**:
-  - API RESTful
-  - Autenticación JWT
-  - Validación de datos
-  - Manejo de errores centralizado
-  - Migraciones de base de datos
-  - Documentación con Postman
+## 🚀 Características Principales
 
-### Frontend (SPA)
-- **Tecnologías**: React, TypeScript, Material-UI, Redux Toolkit
-- **Patrón**: Arquitectura basada en componentes
-- **Características**:
-  - Diseño responsivo
-  - Estado global con Redux
-  - Formularios con Formik y Yup
-  - Navegación con React Router
-  - UI moderna con Material-UI
-  - Gráficos con Recharts
+### Backend (API)
+- **Framework**: Node.js + Express
+- **Base de Datos**: PostgreSQL con TypeORM
+- **Autenticación**: JWT
+- **Validación**: Express-validator
+- **Documentación**: Postman Collection incluida
+- **Reportes**: Generación de PDF y Excel
 
-## 📦 Módulos del Sistema
+### Frontend (Web App)
+- **Framework**: React 19 + TypeScript
+- **UI Library**: Material-UI (MUI)
+- **State Management**: Redux Toolkit
+- **Routing**: React Router DOM
+- **Build Tool**: Vite
+- **Charts**: Recharts para gráficos
 
-### 1. Tipos de Licencias
-- Gestión de diferentes tipos de licencias
-- Configuración de duración y requisitos
-- Validación de límites y restricciones
+## 📋 Módulos del Sistema
 
-### 2. Control de Límites
-- Control de días disponibles por tipo de licencia
-- Historial de uso
-- Alertas de límites
+- **Gestión de Trabajadores**: CRUD completo de empleados
+- **Departamentos**: Administración de departamentos
+- **Puestos**: Gestión de puestos de trabajo
+- **Tipos de Licencias**: Configuración de tipos de licencias
+- **Solicitudes**: Proceso de solicitud y aprobación
+- **Licencias**: Gestión de licencias aprobadas
+- **Disponibilidad**: Control de días disponibles
+- **Validaciones**: Sistema de validaciones
+- **Reportes**: Generación de reportes y estadísticas
+- **Auditoría**: Seguimiento de cambios
 
-### 3. Trabajadores
-- Gestión de información de trabajadores
-- Historial de licencias
-- Documentación personal
+## 🛠️ Instalación y Configuración
 
-### 4. Validaciones
-- Proceso de validación de licencias
-- Estados: Pendiente, Aprobada, Rechazada, Cancelada
-- Filtros y búsquedas avanzadas
-
-## 🚀 Características Técnicas
-
-### Backend
-- **Seguridad**:
-  - Autenticación JWT
-  - Encriptación de contraseñas
-  - Middleware de autorización
-  - Protección contra ataques comunes
-
-- **Base de Datos**:
-  - PostgreSQL como motor principal
-  - TypeORM para ORM
-  - Migraciones automáticas
-  - Relaciones y restricciones
-
-- **API**:
-  - Endpoints RESTful
-  - Validación de datos
-  - Manejo de errores
-  - Respuestas estandarizadas
-
-### Frontend
-- **Estado**:
-  - Redux Toolkit para gestión de estado
-  - Slices por módulo
-  - Thunks para operaciones asíncronas
-
-- **UI/UX**:
-  - Material-UI para componentes
-  - Temas personalizables
-  - Diseño responsivo
-  - Feedback visual
-
-- **Formularios**:
-  - Formik para gestión
-  - Yup para validación
-  - Campos personalizados
-  - Mensajes de error
-
-## 🛠️ Instalación
-
-### Requisitos Previos
-- Node.js (v16+)
-- PostgreSQL (v12+)
+### Prerrequisitos
+- Node.js (v18 o superior)
+- PostgreSQL (v12 o superior)
 - npm o yarn
 
-### Backend
+### 1. Clonar el repositorio
 ```bash
-# Instalar dependencias
+git clone https://github.com/tu-usuario/gestor-licencias-api.git
+cd gestor-licencias-api
+```
+
+### 2. Configurar el Backend
+
+```bash
+# Instalar dependencias del backend
 npm install
 
 # Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones
+# Editar .env con tus credenciales de base de datos
+```
 
+Variables de entorno necesarias (`.env`):
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=tu_usuario
+DB_PASSWORD=tu_password
+DB_NAME=gestor_licencias
+JWT_SECRET=tu_jwt_secret
+PORT=3001
+```
+
+### 3. Configurar la Base de Datos
+
+```bash
 # Ejecutar migraciones
 npm run migration:run
 
-# Iniciar servidor de desarrollo
-npm run dev
+# (Opcional) Ejecutar seeds para datos de prueba
+node scripts/seed-departamentos-puestos.js
+node scripts/seed-tipos-licencias.js
+node scripts/seed-trabajadores.js
 ```
 
-### Frontend
+### 4. Configurar el Frontend
+
 ```bash
-# Navegar al directorio
+# Navegar al directorio del frontend
 cd gestor-licencias-frontend
 
 # Instalar dependencias
@@ -122,87 +113,95 @@ npm install
 
 # Configurar variables de entorno
 cp .env.example .env
-# Editar .env con la URL de la API
+# Editar .env con la URL de tu API
+```
 
-# Iniciar servidor de desarrollo
+Variables de entorno del frontend (`.env`):
+```env
+VITE_API_URL=http://localhost:3001/api
+```
+
+## 🚀 Ejecutar el Proyecto
+
+### Backend
+```bash
+# Desarrollo
 npm run dev
+
+# Producción
+npm start
+```
+
+### Frontend
+```bash
+# Desarrollo
+npm run dev
+
+# Construir para producción
+npm run build
 ```
 
 ## 📚 Documentación
 
-### API
-- Colección de Postman incluida
-- Documentación de endpoints
-- Ejemplos de uso
+- [Documentación Detallada](./DOCUMENTACION_DETALLADA.md)
+- [Guía de Implementación Frontend](./GUIA_IMPLEMENTACION_FRONTEND.md)
+- [Importación de Trabajadores](./IMPORTACION_TRABAJADORES.md)
+- [Solución Licencias Tiempo Indefinido](./SOLUCION_LICENCIAS_TIEMPO_INDEFINIDO.md)
 
-### Frontend
-- Guía de implementación
-- Estructura de componentes
-- Patrones de diseño
+## 🧪 Testing
 
-## 🔧 Scripts Disponibles
+El proyecto incluye archivos de prueba para verificar la funcionalidad:
+- `test-get-endpoints.js` - Prueba de endpoints
+- `test-licencia-horas-completo.js` - Prueba de licencias por horas
+- `test-licencia-tiempo-indefinido.js` - Prueba de licencias indefinidas
 
-### Backend
-```bash
-npm run dev          # Inicia servidor de desarrollo
-npm run build        # Compila TypeScript
-npm run migration:run    # Ejecuta migraciones
-npm run migration:revert # Revierte última migración
-```
+## 📊 API Endpoints
 
-### Frontend
-```bash
-npm run dev     # Inicia servidor de desarrollo
-npm run build   # Compila para producción
-npm run lint    # Ejecuta linter
-npm run preview # Vista previa de producción
-```
+### Autenticación
+- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/logout` - Cerrar sesión
 
-## 🧪 Pruebas
+### Trabajadores
+- `GET /api/trabajadores` - Listar trabajadores
+- `POST /api/trabajadores` - Crear trabajador
+- `PUT /api/trabajadores/:id` - Actualizar trabajador
+- `DELETE /api/trabajadores/:id` - Eliminar trabajador
 
-### Backend
-- Pruebas de integración
-- Pruebas de endpoints
-- Validación de datos
+### Departamentos
+- `GET /api/departamentos` - Listar departamentos
+- `POST /api/departamentos` - Crear departamento
+- `PUT /api/departamentos/:id` - Actualizar departamento
+- `DELETE /api/departamentos/:id` - Eliminar departamento
 
-### Frontend
-- Pruebas de componentes
-- Pruebas de integración
-- Pruebas de estado
+### Tipos de Licencias
+- `GET /api/tipos-licencias` - Listar tipos de licencias
+- `POST /api/tipos-licencias` - Crear tipo de licencia
+- `PUT /api/tipos-licencias/:id` - Actualizar tipo de licencia
+- `DELETE /api/tipos-licencias/:id` - Eliminar tipo de licencia
 
-## 📦 Estructura de Directorios
+### Solicitudes
+- `GET /api/solicitudes` - Listar solicitudes
+- `POST /api/solicitudes` - Crear solicitud
+- `PUT /api/solicitudes/:id` - Actualizar solicitud
+- `DELETE /api/solicitudes/:id` - Eliminar solicitud
 
-```
-gestor-licencias/
-├── src/                    # Backend
-│   ├── controllers/       # Controladores
-│   ├── services/         # Lógica de negocio
-│   ├── repositories/     # Acceso a datos
-│   ├── middlewares/      # Middlewares
-│   ├── config/          # Configuraciones
-│   └── utils/           # Utilidades
-│
-└── gestor-licencias-frontend/  # Frontend
-    ├── src/
-    │   ├── components/   # Componentes reutilizables
-    │   ├── pages/       # Páginas
-    │   ├── store/       # Estado Redux
-    │   ├── services/    # Servicios API
-    │   └── utils/       # Utilidades
-    └── public/          # Archivos estáticos
-```
+### Reportes
+- `GET /api/reportes/departamento` - Reporte por departamento
+- `GET /api/reportes/trabajador` - Reporte por trabajador
+- `GET /api/reportes/tendencias` - Reporte de tendencias
+- `GET /api/reportes/tipo-licencia` - Reporte por tipo de licencia
 
 ## 🤝 Contribución
 
 1. Fork el proyecto
-2. Crea tu rama de características
-3. Commit tus cambios
-4. Push a la rama
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
-## 📝 Licencia
+## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT.
+Este proyecto está bajo la Licencia ISC. Ver el archivo `LICENSE` para más detalles.
 
 ## 👥 Autores
 
@@ -210,6 +209,11 @@ Este proyecto está bajo la Licencia MIT.
 
 ## 🙏 Agradecimientos
 
-- Material-UI por los componentes
+- Material-UI por los componentes de UI
 - TypeORM por el ORM
-- La comunidad de código abierto 
+- Express.js por el framework web
+- React por el framework de frontend
+
+---
+
+**Nota**: Asegúrate de configurar correctamente las variables de entorno y la base de datos antes de ejecutar el proyecto. 

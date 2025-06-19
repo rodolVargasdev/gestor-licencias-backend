@@ -10,6 +10,8 @@ yarn.lock
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 
 # Build output
 dist/
@@ -46,4 +48,41 @@ temp/
 
 # System Files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Uploads and files
+uploads/
+*.xlsx
+*.xls
+*.csv
+backup.sql
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test 

@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:13-alpine
+    container_name: gestor_licencias_db
+    environment:
+      POSTGRES_DB: gestor_licencias
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - gestor_licencias_network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build: .
+    container_name: gestor_licencias_backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: gestor_licencias
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here}
+      PORT: 3001
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    networks:
+      - gestor_licencias_network
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+
+  # Frontend
+  frontend:
+    build: ./gestor-licencias-frontend
+    container_name: gestor_licencias_frontend
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gestor_licencias_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  gestor_licencias_network:
+    driver: bridge 

@@ -1,0 +1,114 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run backend tests
+      run: |
+        npm test
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: test_db
+        JWT_SECRET: test_secret
+        NODE_ENV: test
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: gestor-licencias-frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      run: |
+        cd gestor-licencias-frontend
+        npm ci
+    
+    - name: Run frontend tests
+      run: |
+        cd gestor-licencias-frontend
+        npm run lint
+        npm run build
+      env:
+        VITE_API_URL: http://localhost:3001/api
+
+  build:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install backend dependencies
+      run: npm ci
+    
+    - name: Install frontend dependencies
+      run: |
+        cd gestor-licencias-frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd gestor-licencias-frontend
+        npm run build
+      env:
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: |
+          gestor-licencias-frontend/dist/
+          src/
+          package.json
+          package-lock.json 
