@@ -2,7 +2,7 @@
 
 Sistema completo de gestión de licencias que incluye una API REST (backend) y una aplicación web (frontend) para administrar licencias de empleados, departamentos, puestos y solicitudes.
 
-## 🏗️ Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 gestor-licencias-api/
@@ -24,7 +24,7 @@ gestor-licencias-api/
 └── README.md
 ```
 
-## 🚀 Características Principales
+## Características Principales
 
 ### Backend (API)
 - **Framework**: Node.js + Express
@@ -42,7 +42,7 @@ gestor-licencias-api/
 - **Build Tool**: Vite
 - **Charts**: Recharts para gráficos
 
-## 📋 Módulos del Sistema
+## Módulos del Sistema
 
 - **Gestión de Trabajadores**: CRUD completo de empleados
 - **Departamentos**: Administración de departamentos
@@ -55,7 +55,7 @@ gestor-licencias-api/
 - **Reportes**: Generación de reportes y estadísticas
 - **Auditoría**: Seguimiento de cambios
 
-## 🛠️ Instalación y Configuración
+## Instalación y Configuración
 
 ### Prerrequisitos
 - Node.js (v18 o superior)
@@ -121,7 +121,7 @@ Variables de entorno del frontend (`.env`):
 VITE_API_URL=http://localhost:3001/api
 ```
 
-## 🚀 Ejecutar el Proyecto
+## Ejecutar el Proyecto
 
 ### Backend
 ```bash
@@ -141,21 +141,21 @@ npm run dev
 npm run build
 ```
 
-## 📚 Documentación
+## Documentación
 
 - [Documentación Detallada](./DOCUMENTACION_DETALLADA.md)
 - [Guía de Implementación Frontend](./GUIA_IMPLEMENTACION_FRONTEND.md)
 - [Importación de Trabajadores](./IMPORTACION_TRABAJADORES.md)
 - [Solución Licencias Tiempo Indefinido](./SOLUCION_LICENCIAS_TIEMPO_INDEFINIDO.md)
 
-## 🧪 Testing
+## Testing
 
 El proyecto incluye archivos de prueba para verificar la funcionalidad:
 - `test-get-endpoints.js` - Prueba de endpoints
 - `test-licencia-horas-completo.js` - Prueba de licencias por horas
 - `test-licencia-tiempo-indefinido.js` - Prueba de licencias indefinidas
 
-## 📊 API Endpoints
+## API Endpoints
 
 ### Autenticación
 - `POST /api/auth/login` - Iniciar sesión
@@ -191,7 +191,7 @@ El proyecto incluye archivos de prueba para verificar la funcionalidad:
 - `GET /api/reportes/tendencias` - Reporte de tendencias
 - `GET /api/reportes/tipo-licencia` - Reporte por tipo de licencia
 
-## 🤝 Contribución
+## Contribución
 
 1. Fork el proyecto
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
@@ -203,11 +203,11 @@ El proyecto incluye archivos de prueba para verificar la funcionalidad:
 
 Este proyecto está bajo la Licencia ISC. Ver el archivo `LICENSE` para más detalles.
 
-## 👥 Autores
+## Autores
 
-- Tu Nombre - Desarrollo inicial
+- Rodolfovargasdev
 
-## 🙏 Agradecimientos
+## Agradecimientos
 
 - Material-UI por los componentes de UI
 - TypeORM por el ORM
