@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// La URL base del backend se obtiene de las variables de entorno de Vite.
+// En Render, debes tener una variable llamada VITE_API_URL 
+// con el valor: https://gestor-licencias-backend.onrender.com
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  // Construimos la URL completa, asegurando que el prefijo /api siempre esté presente.
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
   },
