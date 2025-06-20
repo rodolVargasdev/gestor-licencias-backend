@@ -55,7 +55,7 @@ uploads/
 *.xlsx
 *.xls
 *.csv
-backup.sql
+
 
 # OS generated files
 .DS_Store
