@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node src/scripts/run-backup.js && npm start
     envVars:
       - key: NODE_ENV
         value: production
