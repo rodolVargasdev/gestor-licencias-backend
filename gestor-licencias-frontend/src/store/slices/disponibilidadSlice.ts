@@ -47,14 +47,14 @@ const disponibilidadSlice = createSlice({
     updateDisponibilidad: (state, action) => {
       const { trabajadorId, tipoLicenciaId, diasUsados } = action.payload;
       const index = state.items.findIndex(
-        item => item.trabajador.id === trabajadorId && item.tipoLicencia.id === tipoLicenciaId
+        item => item.trabajador.id === trabajadorId && item.tipo_licencia.id === tipoLicenciaId
       );
       
       if (index !== -1) {
         state.items[index] = {
           ...state.items[index],
-          diasUsados,
-          diasRestantes: state.items[index].diasDisponibles - diasUsados
+          dias_usados: diasUsados,
+          dias_restantes: state.items[index].dias_disponibles - diasUsados
         };
         state.lastUpdate = new Date().toISOString();
       }

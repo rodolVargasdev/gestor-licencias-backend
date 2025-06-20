@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { licenciasService } from '../../services/licencias.service';
-import type { Licencia } from '../../types/licencia';
+import type { Licencia, CreateLicenciaDTO } from '../../types/licencia';
 
 interface LicenciasState {
   items: Licencia[];
@@ -47,7 +47,7 @@ export const fetchLicenciaById = createAsyncThunk(
 
 export const createLicencia = createAsyncThunk(
   'licencias/createLicencia',
-  async (licencia: Partial<Licencia>) => {
+  async (licencia: CreateLicenciaDTO) => {
     const response = await licenciasService.create(licencia);
     return response.data;
   }

@@ -84,9 +84,20 @@ const Dashboard: React.FC = () => {
         Dashboard
       </Typography>
       {/* Tarjetas de resumen */}
-      <Grid container spacing={4} sx={{ mb: 4, justifyContent: 'center' }}>
+      <Grid 
+        container 
+        spacing={{ xs: 2, sm: 3, md: 4 }} 
+        sx={{ mb: 4, justifyContent: 'center' }}
+      >
         {menuItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={item.title} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid 
+            key={item.title} 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              width: { xs: '100%', sm: '50%', md: '33.333%', lg: '25%' }
+            }}
+          >
             <Card
               sx={{
                 borderRadius: 4,

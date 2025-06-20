@@ -4,7 +4,8 @@ const api = axios.create({
   baseURL: 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 });
 
 // Interceptor para manejar errores
@@ -22,6 +23,20 @@ api.interceptors.response.use(
       // Algo sucedió al configurar la petición
       console.error('Error:', error.message);
     }
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para agregar el token de autenticación
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
     return Promise.reject(error);
   }
 );

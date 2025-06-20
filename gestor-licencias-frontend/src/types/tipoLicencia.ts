@@ -6,6 +6,12 @@ export interface TipoLicencia {
   unidad_control: 'días' | 'horas' | 'ninguno';
   periodo_control: 'mes' | 'año' | 'ninguno';
   duracion_maxima: number;
+  dias_maximos?: number;
+  personal_operativo?: boolean;
+  personal_administrativo?: boolean;
+  goce_salario?: boolean;
+  notificar_rrhh?: boolean;
+  notificar_trabajador?: boolean;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;
   requiere_documentacion: boolean;
@@ -37,6 +43,12 @@ export interface CreateTipoLicenciaDTO {
   unidad_control: 'días' | 'horas' | 'ninguno';
   periodo_control: 'mes' | 'año' | 'ninguno';
   duracion_maxima: number;
+  dias_maximos?: number;
+  personal_operativo?: boolean;
+  personal_administrativo?: boolean;
+  goce_salario?: boolean;
+  notificar_rrhh?: boolean;
+  notificar_trabajador?: boolean;
   requiere_justificacion: boolean;
   requiere_aprobacion_especial: boolean;
   requiere_documentacion: boolean;

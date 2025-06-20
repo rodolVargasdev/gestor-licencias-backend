@@ -2,6 +2,8 @@ export interface Trabajador {
   id: number;
   codigo: string;
   nombre_completo: string;
+  nombre?: string;
+  apellido?: string;
   email: string;
   telefono: string | null;
   departamento_id: number | null;
@@ -24,6 +26,8 @@ export interface Trabajador {
 export interface CreateTrabajadorDTO {
   codigo: string;
   nombre_completo: string;
+  nombre?: string;
+  apellido?: string;
   email: string;
   telefono?: string;
   departamento_id: number;
@@ -31,6 +35,8 @@ export interface CreateTrabajadorDTO {
   tipo_personal: 'OPERATIVO' | 'ADMINISTRATIVO';
   fecha_ingreso: string;
   activo?: boolean;
+  departamento?: string;
+  cargo?: string;
 }
 
 export interface UpdateTrabajadorDTO extends Partial<CreateTrabajadorDTO> {} 

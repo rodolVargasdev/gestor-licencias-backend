@@ -19,6 +19,19 @@ export interface Validacion {
       nombre: string;
     };
   };
+  // Propiedades adicionales para compatibilidad
+  tipoLicenciaId?: number;
+  trabajadorId?: number;
+  fechaInicio?: string;
+  fechaFin?: string;
+  tipoLicencia?: {
+    id: number;
+    nombre: string;
+  };
+  trabajador?: {
+    id: number;
+    nombre_completo: string;
+  };
 }
 
 export interface CreateValidacionDTO {
@@ -26,6 +39,11 @@ export interface CreateValidacionDTO {
   validado_por: number;
   estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
   observaciones?: string;
+  // Propiedades adicionales para compatibilidad
+  tipo_licencia_id?: number;
+  trabajador_id?: number;
+  fecha_inicio?: string;
+  fecha_fin?: string;
 }
 
 export interface UpdateValidacionDTO {

@@ -15,22 +15,22 @@ export default defineConfig({
       }
     }
   },
-  define: {
-    'process.env': {}
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  optimizeDeps: {
-    include: ['xlsx', 'jspdf', 'jspdf-autotable'],
-  },
   build: {
     outDir: 'dist',
     sourcemap: false,
-    commonjsOptions: {
-      include: [/xlsx/, /jspdf/, /jspdf-autotable/],
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+        },
+      },
     },
   },
 });
