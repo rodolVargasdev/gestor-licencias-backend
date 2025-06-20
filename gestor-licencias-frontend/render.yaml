@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: gestor-licencias-frontend
+    env: static
+    buildCommand: npm install --include=optional && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: VITE_API_URL
+        value: https://gestor-licencias-api.onrender.com 
