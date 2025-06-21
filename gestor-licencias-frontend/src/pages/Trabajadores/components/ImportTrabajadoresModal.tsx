@@ -93,12 +93,27 @@ const ImportTrabajadoresModal: React.FC<ImportTrabajadoresModalProps> = ({
     setIsUploading(true);
     setError(null);
     try {
+      console.log('🚀 Iniciando importación desde modal...');
+      console.log('Archivo seleccionado:', file.name, file.size, file.type);
+      
       const result = await trabajadoresService.importFromExcel(file);
+      console.log('✅ Importación exitosa:', result);
+      
       setImportResult(result.data);
       onSuccess();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Error al importar el archivo');
+      console.error('❌ Error en importación desde modal:', err);
+      
+      let errorMessage = 'Error al importar el archivo';
+      
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { error?: string } } };
+        errorMessage = axiosError.response?.data?.error || errorMessage;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }

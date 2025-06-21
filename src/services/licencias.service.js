@@ -51,9 +51,21 @@ class LicenciasService {
             }
             // 2. Por días: calcular diferencia en días
             else if (tipoLicencia.unidad_control === 'días') {
-                if (!licenciaData.fecha_inicio || !licenciaData.fecha_fin) {
-                    throw new Error('Debe ingresar fecha de inicio y fin');
+                const esOlvidoMarcacion = ['OLVIDO-ENT', 'OLVIDO-SAL'].includes(tipoLicencia.codigo);
+
+                if (!licenciaData.fecha_inicio) {
+                    throw new Error('Debe ingresar al menos la fecha de inicio');
                 }
+
+                // Para olvido de marcación, si no hay fecha fin, se asume que es el mismo día
+                if (esOlvidoMarcacion && !licenciaData.fecha_fin) {
+                    licenciaData.fecha_fin = licenciaData.fecha_inicio;
+                }
+
+                if (!licenciaData.fecha_fin) {
+                    throw new Error('Debe ingresar fecha de fin');
+                }
+
                 const inicio = new Date(licenciaData.fecha_inicio);
                 const fin = new Date(licenciaData.fecha_fin);
                 consumo = Math.floor((fin - inicio) / (1000 * 60 * 60 * 24)) + 1;

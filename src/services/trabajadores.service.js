@@ -152,16 +152,27 @@ class TrabajadoresService {
     }
 
     async importFromExcel(fileBuffer) {
+        console.log('🔧 Iniciando procesamiento del archivo Excel...');
+        console.log('Tamaño del buffer:', fileBuffer.length, 'bytes');
+        
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
             // Leer el archivo Excel
+            console.log('📖 Leyendo archivo Excel...');
             const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+            console.log('Hojas disponibles:', workbook.SheetNames);
+            
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            console.log('📊 Datos extraídos:', {
+                totalRows: data.length,
+                headers: data[0]
+            });
 
             // Validar que hay datos
             if (data.length < 2) {
@@ -175,11 +186,17 @@ class TrabajadoresService {
                 'Departamento', 'Puesto', 'Tipo Personal', 'Fecha Ingreso', 'Activo'
             ];
 
+            console.log('🔍 Validando encabezados...');
+            console.log('Encabezados encontrados:', headers);
+            console.log('Encabezados esperados:', expectedHeaders);
+
             // Validar encabezados
             const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
             if (missingHeaders.length > 0) {
                 throw new Error(`Faltan los siguientes encabezados: ${missingHeaders.join(', ')}`);
             }
+
+            console.log('✅ Encabezados válidos');
 
             // Obtener repositorios necesarios
             const departamentoRepo = AppDataSource.getRepository('Departamento');
@@ -194,10 +211,14 @@ class TrabajadoresService {
                 duplicates: 0
             };
 
+            console.log('🔄 Procesando filas de datos...');
+
             // Procesar cada fila de datos
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const rowNumber = i + 1;
+
+                console.log(`📝 Procesando fila ${rowNumber}:`, row);
 
                 try {
                     // Mapear datos de la fila
@@ -216,6 +237,8 @@ class TrabajadoresService {
                                String(row[headers.indexOf('Activo')] || '').toLowerCase() === '1'
                     };
 
+                    console.log('📋 Datos mapeados:', trabajadorData);
+
                     // Validaciones básicas
                     if (!trabajadorData.codigo) {
                         throw new Error('El código es obligatorio');
@@ -233,6 +256,7 @@ class TrabajadoresService {
                     // Verificar si el código ya existe
                     const existingTrabajador = await this.findByCodigo(trabajadorData.codigo);
                     if (existingTrabajador) {
+                        console.log(`⚠️ Código duplicado: ${trabajadorData.codigo}`);
                         results.duplicates++;
                         results.errors.push({
                             row: rowNumber,
@@ -249,6 +273,9 @@ class TrabajadoresService {
                         });
                         if (departamento) {
                             trabajadorData.departamento_id = departamento.id;
+                            console.log(`🏢 Departamento encontrado: ${departamentoNombre} (ID: ${departamento.id})`);
+                        } else {
+                            console.log(`⚠️ Departamento no encontrado: ${departamentoNombre}`);
                         }
                     }
 
@@ -260,15 +287,22 @@ class TrabajadoresService {
                         });
                         if (puesto) {
                             trabajadorData.puesto_id = puesto.id;
+                            console.log(`💼 Puesto encontrado: ${puestoNombre} (ID: ${puesto.id})`);
+                        } else {
+                            console.log(`⚠️ Puesto no encontrado: ${puestoNombre}`);
                         }
                     }
 
                     // Crear el trabajador
+                    console.log('💾 Guardando trabajador...');
                     const trabajador = this.trabajadoresRepository.create(trabajadorData);
                     const savedTrabajador = await this.trabajadoresRepository.save(trabajador);
+                    console.log(`✅ Trabajador guardado: ${savedTrabajador.codigo} (ID: ${savedTrabajador.id})`);
 
                     // Inicializar disponibilidad para todos los tipos de licencia activos
                     const tipos = await tipoLicenciaRepo.find({ where: { activo: true } });
+                    console.log(`📅 Inicializando disponibilidad para ${tipos.length} tipos de licencia...`);
+                    
                     for (const tipo of tipos) {
                         await disponibilidadRepo.save({
                             trabajador_id: savedTrabajador.id,
@@ -280,8 +314,10 @@ class TrabajadoresService {
                     }
 
                     results.success++;
+                    console.log(`✅ Fila ${rowNumber} procesada exitosamente`);
 
                 } catch (error) {
+                    console.error(`❌ Error en fila ${rowNumber}:`, error.message);
                     results.errors.push({
                         row: rowNumber,
                         error: error.message
@@ -289,10 +325,14 @@ class TrabajadoresService {
                 }
             }
 
+            console.log('💾 Confirmando transacción...');
             await queryRunner.commitTransaction();
+            
+            console.log('✅ Procesamiento completado:', results);
             return results;
 
         } catch (error) {
+            console.error('❌ Error en procesamiento:', error);
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {

@@ -66,19 +66,22 @@ const TrabajadoresPage: React.FC = () => {
   };
 
   const handleImportSuccess = () => {
-    dispatch(fetchTrabajadores());
     setImportModalOpen(false);
+    dispatch(fetchTrabajadores());
   };
 
   // Procesar los datos para agregar los campos planos
-  const trabajadoresProcesados = (trabajadores || []).map((t) => ({
-    ...t,
-    departamento_nombre: t.departamento && t.departamento.nombre ? t.departamento.nombre : 'N/A',
-    puesto_nombre: t.puesto && t.puesto.nombre ? t.puesto.nombre : 'N/A',
-    fecha_ingreso_formateada: t.fecha_ingreso
-      ? new Date(t.fecha_ingreso).toLocaleDateString('es-ES')
-      : 'N/A',
-  }));
+  const trabajadoresProcesados = (trabajadores || []).map((t) => {
+    const plainTrabajador = JSON.parse(JSON.stringify(t));
+    return {
+      ...plainTrabajador,
+      departamento_nombre: plainTrabajador.departamento?.nombre || 'N/A',
+      puesto_nombre: plainTrabajador.puesto?.nombre || 'N/A',
+      fecha_ingreso_formateada: plainTrabajador.fecha_ingreso
+        ? new Date(plainTrabajador.fecha_ingreso).toLocaleDateString('es-ES')
+        : 'N/A',
+    }
+  });
 
   // Filtrar trabajadores según búsqueda
   const trabajadoresFiltrados = trabajadoresProcesados.filter((t) => {
@@ -139,11 +142,13 @@ const TrabajadoresPage: React.FC = () => {
   ];
 
   const handleExportExcel = () => {
-    exportToExcel(trabajadoresProcesados, 'trabajadores');
+    const dataToExport = JSON.parse(JSON.stringify(trabajadoresProcesados));
+    exportToExcel(dataToExport, 'trabajadores');
   };
 
   const handleExportPDF = () => {
-    exportToPDF(trabajadoresProcesados, 'trabajadores');
+    const dataToExport = JSON.parse(JSON.stringify(trabajadoresProcesados));
+    exportToPDF(dataToExport, 'trabajadores');
   };
 
   if (loading) {

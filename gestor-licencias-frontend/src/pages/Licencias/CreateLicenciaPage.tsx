@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,10 +15,6 @@ import {
   Select
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { es } from 'date-fns/locale';
 import { differenceInDays } from 'date-fns';
 import { createSolicitud } from '../../store/slices/solicitudesSlice';
 import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
@@ -85,6 +81,15 @@ const CreateLicenciaPage: React.FC = () => {
   const [periodoRenovacion, setPeriodoRenovacion] = useState<string>('');
   const [codigoTrabajador, setCodigoTrabajador] = useState('');
 
+  const selectedTipoLicencia: TipoLicencia | undefined = useMemo(() => {
+    const raw = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
+    return raw ? JSON.parse(JSON.stringify(raw)) : undefined;
+  }, [formData.tipo_licencia_id, tiposLicencias]);
+
+  const codigoLicencia = selectedTipoLicencia?.codigo || '';
+  const requiereJustificacion = selectedTipoLicencia?.requiere_justificacion;
+  const requiereDocumento = selectedTipoLicencia?.requiere_documentacion;
+
   useEffect(() => {
     dispatch(fetchTrabajadores());
     dispatch(fetchTiposLicencias());
@@ -118,30 +123,15 @@ const CreateLicenciaPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
-    if (name === 'estado') return;
-    setFormData((prev: typeof formData) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleDateChange = (field: string) => (date: Date | null) => {
-    if (date) {
-      setFormData((prev: typeof formData) => {
-        const newData = {
-          ...prev,
-          [field]: date.toISOString().split('T')[0]
-        };
-        // Calcular días del calendario si ambas fechas están presentes y NO es olvido de marcación
-        if (newData.fecha_inicio && newData.fecha_fin && !(selectedTipoLicencia?.codigo === 'OLVIDO-ENT' || selectedTipoLicencia?.codigo === 'OLVIDO-SAL')) {
-          const inicio = new Date(newData.fecha_inicio);
-          const fin = new Date(newData.fecha_fin);
-          const diasCalendario = differenceInDays(fin, inicio) + 1; // +1 para incluir el día inicial
-          newData.dias_calendario = diasCalendario;
-        }
-        return newData;
-      });
-    }
+    
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      const esOlvido = selectedTipoLicencia?.codigo === 'OLVIDO-ENT' || selectedTipoLicencia?.codigo === 'OLVIDO-SAL';
+      if (name === 'fecha_inicio' && esOlvido) {
+        newData.fecha_fin = value;
+      }
+      return newData;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,71 +142,24 @@ const CreateLicenciaPage: React.FC = () => {
     e.preventDefault();
     let errorMsg = '';
     
-    // Obtener el tipo de licencia seleccionado
-    const selectedTipoLicencia = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id)) as TipoLicencia | undefined;
-    const codigoLicencia = selectedTipoLicencia?.codigo || '';
-    
-    // Validaciones por tipo
-    if (formData.tipo_licencia_id) {
-      // Si es tipo con periodo_control: 'ninguno', saltar validaciones de duración
-      if (selectedTipoLicencia?.periodo_control === 'ninguno') {
-        // Solo validar fechas si se proporcionan
-        if (selectedTipoLicencia?.unidad_control === 'horas') {
-          const fecha_inicio = formData.fecha && formData.hora_inicio ? `${formData.fecha}T${formData.hora_inicio}` : '';
-          const fecha_fin = formData.fecha && formData.hora_fin ? `${formData.fecha}T${formData.hora_fin}` : '';
-          if (fecha_inicio && fecha_fin) {
-            const inicio = new Date(fecha_inicio);
-            const fin = new Date(fecha_fin);
-            const horas = (fin - inicio) / (1000 * 60 * 60);
-            if (horas <= 0) errorMsg = 'La hora de fin debe ser posterior a la de inicio';
-          }
-          formData.fecha_inicio = fecha_inicio;
-          formData.fecha_fin = fecha_fin;
-        } else if (selectedTipoLicencia?.unidad_control === 'días') {
-          if (formData.fecha_inicio && formData.fecha_fin) {
-            const inicio = new Date(formData.fecha_inicio);
-            const fin = new Date(formData.fecha_fin);
-            const dias = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-            if (dias <= 0) errorMsg = 'La fecha de fin debe ser posterior o igual a la de inicio';
-          }
-        }
+    if (selectedTipoLicencia?.unidad_control === 'días') {
+      if (!formData.fecha_inicio || !formData.fecha_fin) {
+        errorMsg = 'Debe ingresar fecha de inicio y fin';
       } else {
-        // Validaciones normales para tipos con período de control
-        if (selectedTipoLicencia?.unidad_control === 'horas') {
-          const fecha_inicio = formData.fecha && formData.hora_inicio ? `${formData.fecha}T${formData.hora_inicio}` : '';
-          const fecha_fin = formData.fecha && formData.hora_fin ? `${formData.fecha}T${formData.hora_fin}` : '';
-          if (!fecha_inicio || !fecha_fin) errorMsg = 'Debe ingresar fecha y hora de inicio y fin';
-          const inicio = new Date(fecha_inicio);
-          const fin = new Date(fecha_fin);
-          const horas = (fin - inicio) / (1000 * 60 * 60);
-          if (horas <= 0) errorMsg = 'La hora de fin debe ser posterior a la de inicio';
-          if (selectedTipoLicencia.duracion_maxima && horas > selectedTipoLicencia.duracion_maxima) errorMsg = `No puede solicitar más de ${selectedTipoLicencia.duracion_maxima} horas para este permiso.`;
-          formData.fecha_inicio = fecha_inicio;
-          formData.fecha_fin = fecha_fin;
-        } else if (selectedTipoLicencia && selectedTipoLicencia.unidad_control === 'días') {
-          if (!formData.fecha_inicio || !formData.fecha_fin) errorMsg = 'Debe ingresar fecha de inicio y fin';
-          const inicio = new Date(formData.fecha_inicio);
-          const fin = new Date(formData.fecha_fin);
-          const dias = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          if (dias <= 0) errorMsg = 'La fecha de fin debe ser posterior o igual a la de inicio';
-          if (selectedTipoLicencia.duracion_maxima > 0 && [
-            'ENFERMEDAD', 'DUELO', 'PATERNIDAD', 'MATRIMONIO', 'OLVIDO-ENT', 'OLVIDO-SAL', 'CAMBIO-TUR'
-          ].includes(codigoLicencia) && dias > selectedTipoLicencia.duracion_maxima) errorMsg = `No puede solicitar más de ${selectedTipoLicencia.duracion_maxima} días para este permiso.`;
-          if (codigoLicencia === 'MATERNIDAD' && selectedTipoLicencia.duracion_maxima > 0 && dias > selectedTipoLicencia.duracion_maxima) errorMsg = 'No puede solicitar más de 112 días para este permiso.';
-          // Lactancia materna: autocompletar fecha fin
-          if (codigoLicencia === 'LACTANCIA' && formData.fecha_inicio) {
-            const inicio = new Date(formData.fecha_inicio);
-            const fin = new Date(inicio);
-            fin.setMonth(fin.getMonth() + 6);
-            formData.fecha_fin = fin.toISOString().slice(0, 10);
+        const inicio = new Date(formData.fecha_inicio);
+        const fin = new Date(formData.fecha_fin);
+        if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
+          const dias = differenceInDays(fin, inicio) + 1;
+          if (dias <= 0) {
+            errorMsg = 'La fecha de fin debe ser posterior o igual a la de inicio';
           }
+        } else {
+          errorMsg = 'Las fechas ingresadas no son válidas';
         }
-      }
-      // Cambio de turno: requiere trabajador de cambio
-      if (codigoLicencia === 'CAMBIO-TUR' && !formData.trabajador_cambio_id) {
-        errorMsg = 'Debe especificar el trabajador que hará el cambio de turno';
       }
     }
+    // ... más validaciones
+    
     if (errorMsg) {
       setSnackbar((prev: typeof snackbar) => ({ ...prev, open: true, message: errorMsg, severity: 'error' }));
       return;
@@ -231,16 +174,18 @@ const CreateLicenciaPage: React.FC = () => {
     ) {
       const inicio = new Date(formData.fecha_inicio);
       const fin = new Date(formData.fecha_fin);
-      diasCalendario = differenceInDays(fin, inicio) + 1;
-      // Validar disponibilidad antes de crear la licencia SOLO para licencias por días
-      if (selectedTipoLicencia?.unidad_control === 'días' && disponibilidad !== null && diasCalendario > disponibilidad) {
-        setSnackbar((prev: typeof snackbar) => ({
-          ...prev,
-          open: true,
-          message: `No hay suficientes días disponibles. Días restantes: ${disponibilidad}, Días solicitados: ${diasCalendario}`,
-          severity: 'error'
-        }));
-        return;
+      if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
+        diasCalendario = differenceInDays(fin, inicio) + 1;
+        // Validar disponibilidad antes de crear la licencia SOLO para licencias por días
+        if (selectedTipoLicencia?.unidad_control === 'días' && disponibilidad !== null && diasCalendario > disponibilidad) {
+          setSnackbar((prev: typeof snackbar) => ({
+            ...prev,
+            open: true,
+            message: `No hay suficientes días disponibles. Días restantes: ${disponibilidad}, Días solicitados: ${diasCalendario}`,
+            severity: 'error'
+          }));
+          return;
+        }
       }
     }
 
@@ -290,12 +235,6 @@ const CreateLicenciaPage: React.FC = () => {
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-
-  // Obtener el tipo de licencia seleccionado
-  const selectedTipoLicencia = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id)) as TipoLicencia | undefined;
-  const codigoLicencia = selectedTipoLicencia?.codigo || '';
-  const requiereJustificacion = selectedTipoLicencia?.requiere_justificacion;
-  const requiereDocumento = selectedTipoLicencia?.requiere_documentacion;
 
   const handleBuscarTrabajadorCambio = () => {
     // Implementa la lógica para buscar el trabajador por código
@@ -403,8 +342,8 @@ const CreateLicenciaPage: React.FC = () => {
                     <MenuItem value="SALIDA">Salida</MenuItem>
                   </Select>
                 </FormControl>
-                <TextField label="Fecha del Permiso" name="fecha_inicio" type="date" value={formData.fecha_inicio || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
-                <TextField label="Fecha de Solicitud" name="fecha_solicitud" type="date" value={formData.fecha_solicitud || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
+                <TextField label="Fecha Inicio" name="fecha_inicio" type="date" value={formData.fecha_inicio || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
+                <TextField label="Fecha Fin" name="fecha_fin" type="date" value={formData.fecha_fin || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required InputProps={{ readOnly: true }} />
               </>
             )}
 

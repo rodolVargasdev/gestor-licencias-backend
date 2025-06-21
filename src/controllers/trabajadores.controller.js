@@ -98,13 +98,39 @@ class TrabajadoresController {
 
     async importFromExcel(req, res) {
         try {
+            console.log('📁 Iniciando importación de trabajadores...');
+            console.log('Archivo recibido:', {
+                originalname: req.file?.originalname,
+                mimetype: req.file?.mimetype,
+                size: req.file?.size,
+                buffer: req.file?.buffer ? 'Presente' : 'Ausente'
+            });
+
             if (!req.file) {
+                console.error('❌ No se proporcionó archivo');
                 return res.status(400).json({ 
-                    error: 'No se ha proporcionado ningún archivo' 
+                    error: 'No se ha proporcionado ningún archivo',
+                    success: false 
                 });
             }
 
+            if (!req.file.buffer) {
+                console.error('❌ El archivo no tiene buffer');
+                return res.status(400).json({ 
+                    error: 'El archivo no se procesó correctamente',
+                    success: false 
+                });
+            }
+
+            console.log('🔄 Procesando archivo...');
             const results = await trabajadoresService.importFromExcel(req.file.buffer);
+            
+            console.log('✅ Importación completada:', {
+                total: results.total,
+                success: results.success,
+                errors: results.errors.length,
+                duplicates: results.duplicates
+            });
             
             res.json({
                 success: true,
@@ -112,6 +138,7 @@ class TrabajadoresController {
                 data: results
             });
         } catch (error) {
+            console.error('❌ Error en importación:', error);
             res.status(400).json({ 
                 error: error.message,
                 success: false 
