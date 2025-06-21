@@ -4,6 +4,10 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import type { Solicitud } from '../types/solicitud';
+import type { Trabajador } from '../types/trabajador';
+import type { TipoLicencia } from '../types/tipoLicencia';
+import type { Licencia } from '../types/licencia';
 
 // Tipos para los datos de licencias
 export interface LicenciaExportData {
@@ -130,14 +134,18 @@ export const exportToExcel = (data: LicenciaExportData[], title: string = 'Repor
 
 // Función para formatear datos de licencias para exportación
 export const formatLicenciasForExport = (
-  solicitudes: any[],
-  trabajadores: any[],
-  tiposLicencias: any[],
-  licencias: any[]
+  solicitudes: Solicitud[],
+  trabajadores: Trabajador[],
+  tiposLicencias: TipoLicencia[],
+  licencias: Licencia[]
 ): LicenciaExportData[] => {
   return solicitudes.map(solicitud => {
     const trabajador = trabajadores.find(t => t.id === solicitud.trabajador_id);
-    const tipoLicencia = tiposLicencias.find(t => t.id === solicitud.tipo_licencia_id);
+    
+    // Convertir el tipo de licencia a un objeto plano para evitar errores de WritableDraft
+    const tipoLicenciaRaw = tiposLicencias.find(t => t.id === solicitud.tipo_licencia_id);
+    const tipoLicencia = tipoLicenciaRaw ? JSON.parse(JSON.stringify(tipoLicenciaRaw)) : undefined;
+
     const licencia = licencias.find(l => l.solicitud_id === solicitud.id);
     
     // Calcular duración

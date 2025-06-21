@@ -158,8 +158,9 @@ const LicenciasPage: React.FC = () => {
     return trabajador ? trabajador.codigo : 'N/A';
   };
 
-  const getTipoLicencia = (id: number) => {
-    return tiposLicencias.find(t => t.id === id);
+  const getTipoLicencia = (id: number): TipoLicencia | undefined => {
+    const tipo = tiposLicencias.find(t => t.id === id);
+    return tipo ? JSON.parse(JSON.stringify(tipo)) : undefined;
   };
 
   const handleEdit = (solicitudId: number) => {
@@ -334,17 +335,17 @@ const LicenciasPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const tipoLicencia = getTipoLicencia(solicitud.tipo_licencia_id);
-                        return (
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {tipoLicencia?.nombre || 'N/A'}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {tipoLicencia?.codigo || 'N/A'}
-                            </Typography>
-                          </Box>
-                        );
+                        const tipo = getTipoLicencia(solicitud.tipo_licencia_id);
+                        if (!tipo) return 'N/A';
+
+                        const esOlvido = tipo.codigo === 'OLVIDO-ENT' || tipo.codigo === 'OLVIDO-SAL';
+                        
+                        if (esOlvido && solicitud.tipo_olvido_marcacion) {
+                          const tipoMarcacion = solicitud.tipo_olvido_marcacion.charAt(0).toUpperCase() + solicitud.tipo_olvido_marcacion.slice(1).toLowerCase();
+                          return `${tipo.nombre} - ${tipoMarcacion}`;
+                        }
+                        
+                        return tipo.nombre;
                       })()}
                     </TableCell>
                     <TableCell>
