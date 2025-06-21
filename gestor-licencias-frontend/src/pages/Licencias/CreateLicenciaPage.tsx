@@ -58,8 +58,8 @@ const CreateLicenciaPage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     trabajador_id: 0,
     tipo_licencia_id: 0,
-    fecha_inicio: '',
-    fecha_fin: '',
+    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_fin: new Date().toISOString().split('T')[0],
     motivo: '',
     estado: 'APROBADA',
     fecha_solicitud: new Date().toISOString().split('T')[0],
