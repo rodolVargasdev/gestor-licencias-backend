@@ -66,7 +66,6 @@ const TrabajadoresPage: React.FC = () => {
   };
 
   const handleImportSuccess = () => {
-    setImportModalOpen(false);
     dispatch(fetchTrabajadores());
   };
 

@@ -100,7 +100,6 @@ const ImportTrabajadoresModal: React.FC<ImportTrabajadoresModalProps> = ({
       console.log('✅ Importación exitosa:', result);
       
       setImportResult(result.data);
-      onSuccess();
     } catch (err: unknown) {
       console.error('❌ Error en importación desde modal:', err);
       
@@ -123,7 +122,8 @@ const ImportTrabajadoresModal: React.FC<ImportTrabajadoresModalProps> = ({
     const templateData = [
       ['Código', 'Nombre Completo', 'Email', 'Teléfono', 'Departamento', 'Puesto', 'Tipo Personal', 'Fecha Ingreso', 'Activo'],
       ['EMP001', 'Juan Pérez', 'juan.perez@empresa.com', '123456789', 'RRHH', 'Analista', 'ADMINISTRATIVO', '2024-01-15', 'Sí'],
-      ['EMP002', 'María García', 'maria.garcia@empresa.com', '987654321', 'IT', 'Desarrollador', 'OPERATIVO', '2024-02-01', 'Sí']
+      ['EMP002', 'María García', 'maria.garcia@empresa.com', '987654321', 'IT', 'Desarrollador', 'OPERATIVO', '2024-02-01', 'Sí'],
+      ['EMP003', 'Pedro Jimenez', 'pedro.jimenez@empresa.com', '555123456', 'Logística', 'Coordinador', 'OPERATIVO', '2024-03-01', 'Sí']
     ];
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(templateData);
@@ -145,6 +145,9 @@ const ImportTrabajadoresModal: React.FC<ImportTrabajadoresModalProps> = ({
   };
 
   const handleClose = () => {
+    if (importResult && importResult.success > 0) {
+      onSuccess();
+    }
     setFile(null);
     setError(null);
     setImportResult(null);
@@ -174,8 +177,8 @@ const ImportTrabajadoresModal: React.FC<ImportTrabajadoresModalProps> = ({
                 <li><b>Nombre Completo</b> <span style={{ color: '#1976d2' }}>(obligatorio)</span></li>
                 <li><b>Email</b> <span style={{ color: '#1976d2' }}>(obligatorio)</span></li>
                 <li><b>Teléfono</b> (opcional)</li>
-                <li><b>Departamento</b> (opcional)</li>
-                <li><b>Puesto</b> (opcional)</li>
+                <li><b>Departamento</b> (opcional - si no existe, se creará uno nuevo)</li>
+                <li><b>Puesto</b> (opcional - si no existe, se creará uno nuevo)</li>
                 <li><b>Tipo Personal</b> <span style={{ color: '#1976d2' }}>(OPERATIVO o ADMINISTRATIVO)</span></li>
                 <li><b>Fecha Ingreso</b> <span style={{ color: '#1976d2' }}>(formato: YYYY-MM-DD)</span></li>
                 <li><b>Activo</b> <span style={{ color: '#1976d2' }}>(Sí/No)</span></li>

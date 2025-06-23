@@ -1,13 +1,17 @@
 const { AppDataSource } = require('../config/database');
 const Trabajador = require('../models/trabajador.model');
 const Licencia = require('../models/licencia.model');
-const { Between } = require('typeorm');
+const Departamento = require('../models/departamentos.model');
+const Puesto = require('../models/puestos.model');
+const { Between, LessThanOrEqual, MoreThanOrEqual } = require('typeorm');
 const XLSX = require('xlsx');
 
 class TrabajadoresService {
     constructor() {
         this.trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         this.licenciasRepository = AppDataSource.getRepository(Licencia);
+        this.departamentosRepository = AppDataSource.getRepository(Departamento);
+        this.puestosRepository = AppDataSource.getRepository(Puesto);
     }
 
     async create(trabajadorData) {
@@ -199,8 +203,6 @@ class TrabajadoresService {
             console.log('✅ Encabezados válidos');
 
             // Obtener repositorios necesarios
-            const departamentoRepo = AppDataSource.getRepository('Departamento');
-            const puestoRepo = AppDataSource.getRepository('Puesto');
             const tipoLicenciaRepo = AppDataSource.getRepository('TipoLicencia');
             const disponibilidadRepo = AppDataSource.getRepository('Disponibilidad');
 
@@ -211,6 +213,7 @@ class TrabajadoresService {
                 duplicates: 0
             };
 
+            const usedEmailsInSession = new Set();
             console.log('🔄 Procesando filas de datos...');
 
             // Procesar cada fila de datos
@@ -237,8 +240,6 @@ class TrabajadoresService {
                                String(row[headers.indexOf('Activo')] || '').toLowerCase() === '1'
                     };
 
-                    console.log('📋 Datos mapeados:', trabajadorData);
-
                     // Validaciones básicas
                     if (!trabajadorData.codigo) {
                         throw new Error('El código es obligatorio');
@@ -246,9 +247,58 @@ class TrabajadoresService {
                     if (!trabajadorData.nombre_completo) {
                         throw new Error('El nombre completo es obligatorio');
                     }
+
+                    // --- MANEJO DE EMAIL ---
                     if (!trabajadorData.email) {
-                        throw new Error('El email es obligatorio');
+                        // Generar email si no existe
+                        const articles = ['de', 'del', 'la', 'las', 'los'];
+                        const nameParts = trabajadorData.nombre_completo
+                            .toLowerCase()
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "")
+                            .replace(/[^a-z0-9\s]/g, '')
+                            .split(' ')
+                            .filter(p => p && !articles.includes(p));
+
+                        if (nameParts.length === 0) {
+                            throw new Error('El nombre completo no es válido para generar un email');
+                        }
+
+                        const firstName = nameParts[0];
+                        const lastName = nameParts.length >= 2 ? nameParts[1] : '';
+                        const baseUsername = lastName ? `${firstName}.${lastName}` : firstName;
+
+                        let counter = 0;
+                        let finalEmail = '';
+                        while(true) {
+                            const suffix = counter === 0 ? '' : counter.toString().padStart(2, '0');
+                            const currentEmail = `${baseUsername}${suffix}@telesalud.gob.sv`;
+
+                            const dbCheck = await queryRunner.manager.findOne(Trabajador, { where: { email: currentEmail } });
+                            const sessionCheck = usedEmailsInSession.has(currentEmail);
+
+                            if (!dbCheck && !sessionCheck) {
+                                finalEmail = currentEmail;
+                                break;
+                            }
+                            counter++;
+                        }
+                        trabajadorData.email = finalEmail;
+                        console.log(`📧 Email no proporcionado. Generado automáticamente: ${trabajadorData.email}`);
                     }
+
+                    // Validar unicidad del email (tanto el proporcionado como el generado)
+                    if (usedEmailsInSession.has(trabajadorData.email)) {
+                        throw new Error(`El email ${trabajadorData.email} está duplicado dentro del mismo archivo`);
+                    }
+                    const existingByEmail = await queryRunner.manager.findOne(Trabajador, { where: { email: trabajadorData.email } });
+                    if (existingByEmail) {
+                        throw new Error(`El email ${trabajadorData.email} ya existe en la base de datos`);
+                    }
+                    usedEmailsInSession.add(trabajadorData.email);
+                    
+                    console.log('📋 Datos mapeados:', trabajadorData);
+
                     if (!['OPERATIVO', 'ADMINISTRATIVO'].includes(trabajadorData.tipo_personal)) {
                         throw new Error('El tipo personal debe ser OPERATIVO o ADMINISTRATIVO');
                     }
@@ -265,31 +315,51 @@ class TrabajadoresService {
                         continue;
                     }
 
-                    // Buscar departamento por nombre
+                    // Buscar o crear departamento por nombre
                     const departamentoNombre = String(row[headers.indexOf('Departamento')] || '').trim();
                     if (departamentoNombre) {
-                        const departamento = await departamentoRepo.findOne({
+                        let departamento = await this.departamentosRepository.findOne({
                             where: { nombre: departamentoNombre }
                         });
+                        
                         if (departamento) {
                             trabajadorData.departamento_id = departamento.id;
                             console.log(`🏢 Departamento encontrado: ${departamentoNombre} (ID: ${departamento.id})`);
                         } else {
-                            console.log(`⚠️ Departamento no encontrado: ${departamentoNombre}`);
+                            // Crear nuevo departamento automáticamente
+                            console.log(`🆕 Creando nuevo departamento: ${departamentoNombre}`);
+                            const nuevoDepartamento = this.departamentosRepository.create({
+                                nombre: departamentoNombre,
+                                descripcion: 'Nuevo registro automático - Creado durante importación masiva',
+                                activo: true
+                            });
+                            departamento = await this.departamentosRepository.save(nuevoDepartamento);
+                            trabajadorData.departamento_id = departamento.id;
+                            console.log(`✅ Departamento creado: ${departamentoNombre} (ID: ${departamento.id})`);
                         }
                     }
 
-                    // Buscar puesto por nombre
+                    // Buscar o crear puesto por nombre
                     const puestoNombre = String(row[headers.indexOf('Puesto')] || '').trim();
                     if (puestoNombre) {
-                        const puesto = await puestoRepo.findOne({
+                        let puesto = await this.puestosRepository.findOne({
                             where: { nombre: puestoNombre }
                         });
+                        
                         if (puesto) {
                             trabajadorData.puesto_id = puesto.id;
                             console.log(`💼 Puesto encontrado: ${puestoNombre} (ID: ${puesto.id})`);
                         } else {
-                            console.log(`⚠️ Puesto no encontrado: ${puestoNombre}`);
+                            // Crear nuevo puesto automáticamente
+                            console.log(`🆕 Creando nuevo puesto: ${puestoNombre}`);
+                            const nuevoPuesto = this.puestosRepository.create({
+                                nombre: puestoNombre,
+                                descripcion: 'Nuevo registro automático - Creado durante importación masiva',
+                                activo: true
+                            });
+                            puesto = await this.puestosRepository.save(nuevoPuesto);
+                            trabajadorData.puesto_id = puesto.id;
+                            console.log(`✅ Puesto creado: ${puestoNombre} (ID: ${puesto.id})`);
                         }
                     }
 
