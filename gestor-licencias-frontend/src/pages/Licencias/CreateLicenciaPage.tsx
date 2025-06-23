@@ -19,6 +19,8 @@ import {
   ListItemText,
   ListItemIcon,
   Grid,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { differenceInDays } from 'date-fns';
@@ -52,6 +54,7 @@ interface FormData {
   dias_calendario?: number;
   codigo_trabajador_cambio?: string;
   nombre_trabajador_cambio?: string;
+  afecta_disponibilidad: boolean;
 }
 
 const CreateLicenciaPage: React.FC = () => {
@@ -75,6 +78,7 @@ const CreateLicenciaPage: React.FC = () => {
     fecha_si_asiste: '',
     trabajador_cambio_id: '',
     tipo_olvido_marcacion: undefined,
+    afecta_disponibilidad: true,
   });
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' | 'info' });
@@ -127,6 +131,13 @@ const CreateLicenciaPage: React.FC = () => {
       }
       return newData;
     });
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    if (name === 'es_retroactiva') {
+      setFormData(prev => ({ ...prev, afecta_disponibilidad: !checked }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,8 +207,8 @@ const CreateLicenciaPage: React.FC = () => {
       const fin = new Date(formData.fecha_fin);
       if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
         diasCalendario = differenceInDays(fin, inicio) + 1;
-        // Validar disponibilidad antes de crear la licencia SOLO para licencias por días
-        if (selectedTipoLicencia?.unidad_control === 'días' && disponibilidad !== null && diasCalendario > disponibilidad) {
+        // Validar disponibilidad antes de crear la licencia SOLO para licencias por días Y si NO es retroactiva
+        if (selectedTipoLicencia?.unidad_control === 'días' && disponibilidad !== null && diasCalendario > disponibilidad && formData.afecta_disponibilidad) {
           setSnackbar((prev: typeof snackbar) => ({
             ...prev,
             open: true,
@@ -320,21 +331,36 @@ const CreateLicenciaPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth>
-              <InputLabel>Tipo de Licencia</InputLabel>
-              <Select
-                name="tipo_licencia_id"
-                value={formData.tipo_licencia_id?.toString() || ''}
-                onChange={handleChange}
-                required
-              >
-                {tiposLicencias.map((tipo) => (
-                  <MenuItem key={tipo.id} value={tipo.id}>
-                    {tipo.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Tipo de Licencia</InputLabel>
+                <Select
+                  name="tipo_licencia_id"
+                  value={formData.tipo_licencia_id || ''}
+                  onChange={handleChange}
+                  label="Tipo de Licencia"
+                >
+                  <MenuItem value=""><em>Seleccione un tipo de licencia</em></MenuItem>
+                  {tiposLicencias.map((tipo) => (
+                    <MenuItem key={tipo.id} value={tipo.id}>{tipo.nombre}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!formData.afecta_disponibilidad}
+                    onChange={handleCheckboxChange}
+                    name="es_retroactiva"
+                    color="primary"
+                  />
+                }
+                label="Es retroactiva (no afecta disponibilidad)"
+              />
+            </Grid>
 
             {/* CAMBIO DE TURNO */}
             {selectedTipoLicencia?.nombre === 'Cambio de turno' && (

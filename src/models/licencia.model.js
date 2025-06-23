@@ -80,6 +80,11 @@ module.exports = new EntitySchema({
             type: 'enum',
             enum: ['ENTRADA', 'SALIDA'],
             nullable: true
+        },
+        afecta_disponibilidad: {
+            type: 'boolean',
+            default: true,
+            comment: 'Indica si la licencia debe afectar el cómputo de disponibilidad del período actual. Se establece en FALSE para licencias retroactivas.'
         }
     },
     relations: {

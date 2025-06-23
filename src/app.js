@@ -4,6 +4,8 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const { AppDataSource } = require('./config/database');
 require('dotenv').config();
+const cron = require('node-cron');
+const { renovarDisponibilidad } = require('./scripts/renovar-disponibilidad');
 
 // Importar rutas
 const trabajadoresRoutes = require('./routes/trabajadores.routes');
@@ -41,6 +43,16 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Tarea programada para renovar la disponibilidad
+// Se ejecuta todos los días a las 00:00 (medianoche)
+cron.schedule('0 0 * * *', () => {
+  console.log('⏰ Ejecutando tarea programada: Renovación de Disponibilidad.');
+  renovarDisponibilidad();
+}, {
+  scheduled: true,
+  timezone: "America/El_Salvador"
 });
 
 // Rutas

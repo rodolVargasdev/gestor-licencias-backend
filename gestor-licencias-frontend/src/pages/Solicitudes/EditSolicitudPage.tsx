@@ -6,13 +6,16 @@ import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
 import { fetchLicencias } from '../../store/slices/licenciasSlice';
 import { fetchDisponibilidadByTrabajador } from '../../store/slices/disponibilidadSlice';
+import { licenciasService } from '../../services/licencias.service';
 import type { RootState, AppDispatch } from '../../store';
-import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem, FormControl, InputLabel, Select, InputAdornment, Grid, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
+import { Box, Button, TextField, Typography, Paper, Snackbar, Alert, MenuItem, FormControl, InputLabel, Select, InputAdornment, Grid, List, ListItem, ListItemText, ListItemIcon, FormControlLabel, Checkbox } from '@mui/material';
 import type { Solicitud } from '../../types/solicitud';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 import { CheckCircle as CheckCircleIcon, Cancel as CancelIcon, Warning as WarningIcon, Info as InfoIcon } from '@mui/icons-material';
 import { toElSalvadorDate, combineDateAndTime, fromElSalvadorDate } from '../../utils/dateUtils';
+import type { DisponibilidadTrabajador } from '../../types/disponibilidad';
+import type { PayloadAction } from '@reduxjs/toolkit';
 
 function calcularDiasHabiles(fechaInicio: string, fechaFin: string): number {
   if (!fechaInicio || !fechaFin) return 0;
@@ -33,12 +36,23 @@ const EditSolicitudPage: React.FC = () => {
   const [codigoTrabajador, setCodigoTrabajador] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [disponibilidad, setDisponibilidad] = useState<number | null>(null);
+  const [afectaDisponibilidad, setAfectaDisponibilidad] = useState(true);
+  const [disponibilidadBase, setDisponibilidadBase] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchSolicitudById(Number(id)));
       dispatch(fetchTrabajadores());
       dispatch(fetchTiposLicencias());
+      
+      licenciasService.findBySolicitud(Number(id)).then(response => {
+        if (response.data) {
+          setAfectaDisponibilidad(response.data.afecta_disponibilidad ?? true);
+        }
+      }).catch(() => {
+        // Si no se encuentra licencia o hay error, asumir el valor por defecto
+        setAfectaDisponibilidad(true);
+      });
     }
   }, [dispatch, id]);
 
@@ -76,19 +90,59 @@ const EditSolicitudPage: React.FC = () => {
     }
   }, [codigoTrabajador, trabajadores]);
 
+  // Función para recalcular disponibilidad considerando si es retroactiva
+  const recalcularDisponibilidad = (esRetroactiva: boolean) => {
+    if (!formData.trabajador_id || !formData.tipo_licencia_id || disponibilidadBase === null) {
+      return;
+    }
+
+    const selectedTipoLicencia = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
+    if (!selectedTipoLicencia) return;
+
+    // Si es retroactiva, no afecta la disponibilidad mostrada
+    if (esRetroactiva) {
+      setDisponibilidad(disponibilidadBase);
+    } else {
+      // Si no es retroactiva, calcular cuántos días/horas usa esta licencia
+      let diasUsados = 0;
+      
+      if (selectedTipoLicencia.unidad_control === 'días' && formData.fecha_inicio && formData.fecha_fin) {
+        const inicio = new Date(formData.fecha_inicio);
+        const fin = new Date(formData.fecha_fin);
+        diasUsados = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      } else if (selectedTipoLicencia.unidad_control === 'horas' && formData.fecha && formData.hora_inicio && formData.hora_fin) {
+        const inicio = new Date(`${formData.fecha}T${formData.hora_inicio}`);
+        const fin = new Date(`${formData.fecha}T${formData.hora_fin}`);
+        const horas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+        diasUsados = horas; // Para licencias por horas, usar las horas como "días"
+      }
+
+      // Restar los días/horas de la disponibilidad base
+      setDisponibilidad(Math.max(0, disponibilidadBase - diasUsados));
+    }
+  };
+
   useEffect(() => {
     if (formData.trabajador_id && formData.tipo_licencia_id) {
       dispatch(fetchDisponibilidadByTrabajador(formData.trabajador_id)).then((action) => {
         const payload = (action as any).payload;
         if (payload) {
           const disp = payload.find((d: any) => d.tipo_licencia.id === Number(formData.tipo_licencia_id));
-          setDisponibilidad(disp ? disp.dias_restantes : null);
+          const disponibilidadInicial = disp ? disp.dias_restantes : null;
+          setDisponibilidadBase(disponibilidadInicial);
+          setDisponibilidad(disponibilidadInicial);
         }
       });
     } else {
+      setDisponibilidadBase(null);
       setDisponibilidad(null);
     }
   }, [formData.trabajador_id, formData.tipo_licencia_id, dispatch]);
+
+  // Recalcular disponibilidad cuando cambie el checkbox o las fechas
+  useEffect(() => {
+    recalcularDisponibilidad(!afectaDisponibilidad);
+  }, [afectaDisponibilidad, formData.fecha_inicio, formData.fecha_fin, formData.fecha, formData.hora_inicio, formData.hora_fin]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
@@ -107,6 +161,12 @@ const EditSolicitudPage: React.FC = () => {
       newFormData.dias_habiles = calcularDiasHabiles(fechaInicio || '', fechaFin || '');
     }
     setFormData(newFormData);
+  };
+
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const esRetroactiva = !event.target.checked;
+    setAfectaDisponibilidad(event.target.checked);
+    // La recalcularDisponibilidad se ejecutará automáticamente por el useEffect
   };
 
   const handleBuscarTrabajadorCambio = () => {
@@ -177,6 +237,27 @@ const EditSolicitudPage: React.FC = () => {
       }
     }
 
+    // Validar disponibilidad solo si NO es retroactiva
+    if (!errorMsg && afectaDisponibilidad && disponibilidad !== null) {
+      let diasSolicitados = 0;
+      const selectedTipoLicencia = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
+      
+      if (selectedTipoLicencia?.unidad_control === 'días' && formData.fecha_inicio && formData.fecha_fin) {
+        const inicio = new Date(formData.fecha_inicio);
+        const fin = new Date(formData.fecha_fin);
+        diasSolicitados = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      } else if (selectedTipoLicencia?.unidad_control === 'horas' && formData.fecha && formData.hora_inicio && formData.hora_fin) {
+        const inicio = new Date(`${formData.fecha}T${formData.hora_inicio}`);
+        const fin = new Date(`${formData.fecha}T${formData.hora_fin}`);
+        const horas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+        diasSolicitados = horas; // Para licencias por horas, usar las horas como "días"
+      }
+
+      if (diasSolicitados > disponibilidad) {
+        errorMsg = `No hay suficientes días disponibles. Días restantes: ${disponibilidad}, Días solicitados: ${diasSolicitados}`;
+      }
+    }
+
     if (errorMsg) {
       setSnackbar({ open: true, message: errorMsg, severity: 'error' });
     } else {
@@ -190,6 +271,7 @@ const EditSolicitudPage: React.FC = () => {
           fecha_solicitud: formData.fecha_solicitud ? toElSalvadorDate(formData.fecha_solicitud) : undefined,
           fecha_no_asiste: formData.fecha_no_asiste ? toElSalvadorDate(formData.fecha_no_asiste) : undefined,
           fecha_si_asiste: formData.fecha_si_asiste ? toElSalvadorDate(formData.fecha_si_asiste) : undefined,
+          afecta_disponibilidad: afectaDisponibilidad,
         };
 
         // Para licencias por horas, combinar fecha y hora correctamente
@@ -211,6 +293,7 @@ const EditSolicitudPage: React.FC = () => {
         
         setTimeout(() => navigate('/licencias'), 1000);
       } catch (error) {
+        console.error('Error al actualizar la solicitud:', error);
         setSnackbar({ open: true, message: 'Error al actualizar la solicitud', severity: 'error' });
       }
     }
@@ -256,6 +339,19 @@ const EditSolicitudPage: React.FC = () => {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!afectaDisponibilidad}
+                    onChange={(e) => setAfectaDisponibilidad(!e.target.checked)}
+                    name="es_retroactiva"
+                  />
+                }
+                label="Es retroactiva (no afecta disponibilidad)"
+              />
             </Grid>
 
             <Grid item xs={12}>

@@ -171,7 +171,8 @@ class DisponibilidadService {
                 // Calcular usados en la unidad correcta
                 const licenciasActivas = trabajador.licencias.filter(licencia => 
                     licencia.tipo_licencia_id === tipoLicencia.id && 
-                    licencia.estado === 'ACTIVA'
+                    licencia.estado === 'ACTIVA' &&
+                    licencia.afecta_disponibilidad === true
                 );
 
                 let usados = 0;

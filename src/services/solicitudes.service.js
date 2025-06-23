@@ -18,6 +18,11 @@ class SolicitudesService {
 
     async create(solicitudData) {
         try {
+            // Debug: Log the received data
+            console.log('SolicitudesService.create - Received data:', JSON.stringify(solicitudData, null, 2));
+            console.log('afecta_disponibilidad value:', solicitudData.afecta_disponibilidad);
+            console.log('afecta_disponibilidad type:', typeof solicitudData.afecta_disponibilidad);
+            
             // Normalizar las fechas a la zona horaria de El Salvador
             const normalizedData = normalizeDates(solicitudData);
             
@@ -111,8 +116,33 @@ class SolicitudesService {
 
             // Si la solicitud es APROBADA, crear la licencia y actualizar disponibilidad
             if (savedSolicitud.estado === 'APROBADA') {
-                if (!esOlvidoMarcacion && tipoLicencia.periodo_control !== 'ninguno') {
-                    // Actualizar disponibilidad solo si NO es olvido de marcación Y NO es tipo sin período
+                // Usar el valor de afecta_disponibilidad que viene del frontend
+                // Si no viene especificado, determinar automáticamente basándose en la fecha
+                let afectaDisponibilidad = normalizedData.afecta_disponibilidad !== undefined ? 
+                    normalizedData.afecta_disponibilidad : true;
+                
+                console.log('Debug afecta_disponibilidad logic:');
+                console.log('- normalizedData.afecta_disponibilidad:', normalizedData.afecta_disponibilidad);
+                console.log('- afectaDisponibilidad initial value:', afectaDisponibilidad);
+                
+                // Solo determinar automáticamente si no fue especificado explícitamente
+                if (normalizedData.afecta_disponibilidad === undefined) {
+                    const hoy = new Date();
+                    const fechaInicioLicencia = new Date(savedSolicitud.fecha_inicio);
+
+                    if (tipoLicencia.periodo_control === 'anual' && fechaInicioLicencia.getFullYear() < hoy.getFullYear()) {
+                        afectaDisponibilidad = false;
+                    }
+                    if (tipoLicencia.periodo_control === 'mensual' && (fechaInicioLicencia.getFullYear() < hoy.getFullYear() || fechaInicioLicencia.getMonth() < hoy.getMonth())) {
+                        afectaDisponibilidad = false;
+                    }
+                    console.log('- Auto-determined afectaDisponibilidad:', afectaDisponibilidad);
+                } else {
+                    console.log('- Using frontend-provided afectaDisponibilidad:', afectaDisponibilidad);
+                }
+
+                // Actualizar disponibilidad SOLO si la licencia no es retroactiva
+                if (afectaDisponibilidad && !esOlvidoMarcacion && tipoLicencia.periodo_control !== 'ninguno') {
                     const disponibilidad = await this.disponibilidadRepository.findOne({
                         where: {
                             trabajador_id: savedSolicitud.trabajador_id,
@@ -147,13 +177,14 @@ class SolicitudesService {
                     trabajador_id: savedSolicitud.trabajador_id,
                     tipo_licencia_id: savedSolicitud.tipo_licencia_id,
                     fecha_inicio: savedSolicitud.fecha_inicio,
-                    fecha_fin: savedSolicitud.fecha_fin || savedSolicitud.fecha_inicio, // Para olvido de marcación, usar la misma fecha
+                    fecha_fin: savedSolicitud.fecha_fin || savedSolicitud.fecha_inicio,
                     dias_totales: savedSolicitud.dias_solicitados,
                     dias_habiles: savedSolicitud.dias_habiles,
                     dias_calendario: savedSolicitud.dias_calendario,
                     estado: 'ACTIVA',
                     activo: true,
-                    tipo_olvido_marcacion: savedSolicitud.tipo_olvido_marcacion
+                    tipo_olvido_marcacion: savedSolicitud.tipo_olvido_marcacion,
+                    afecta_disponibilidad: afectaDisponibilidad
                 });
 
                 // Calcular horas si el tipo de licencia es por horas
@@ -232,31 +263,69 @@ class SolicitudesService {
 
             // Si existe una licencia asociada, actualizarla
             if (licencia) {
+                // Usar el valor de afecta_disponibilidad que viene del frontend
+                // Si no viene especificado, mantener el valor actual
+                const afectaDisponibilidad = normalizedData.afecta_disponibilidad !== undefined ? 
+                    normalizedData.afecta_disponibilidad : licencia.afecta_disponibilidad;
+
+                // Actualizar el campo afecta_disponibilidad en la licencia
+                licencia.afecta_disponibilidad = afectaDisponibilidad;
+
                 // Calcular la diferencia de días para actualizar la disponibilidad
-                const diasAnteriores = licencia.dias_calendario || 0;
-                const diasNuevos = solicitudActualizada.dias_calendario || 0;
-                const diferenciaDias = diasNuevos - diasAnteriores;
+                // SOLO si la licencia afecta la disponibilidad
+                if (afectaDisponibilidad) {
+                    const diasAnteriores = licencia.dias_calendario || 0;
+                    const diasNuevos = solicitudActualizada.dias_calendario || 0;
+                    const diferenciaDias = diasNuevos - diasAnteriores;
 
-                // Si hay cambio en los días, actualizar la disponibilidad
-                if (diferenciaDias !== 0) {
-                    const disponibilidad = await this.disponibilidadRepository.findOne({
-                        where: {
-                            trabajador_id: solicitudActualizada.trabajador_id,
-                            tipo_licencia_id: solicitudActualizada.tipo_licencia_id
+                    // Si hay cambio en los días, actualizar la disponibilidad
+                    if (diferenciaDias !== 0) {
+                        const disponibilidad = await this.disponibilidadRepository.findOne({
+                            where: {
+                                trabajador_id: solicitudActualizada.trabajador_id,
+                                tipo_licencia_id: solicitudActualizada.tipo_licencia_id
+                            }
+                        });
+
+                        if (disponibilidad) {
+                            // Convertir a float para asegurar la precisión decimal
+                            const diasDisponibles = parseFloat(disponibilidad.dias_disponibles);
+                            let diasUsados = parseFloat(disponibilidad.dias_usados);
+
+                            diasUsados += diferenciaDias;
+
+                            disponibilidad.dias_usados = diasUsados.toFixed(2);
+                            disponibilidad.dias_restantes = (diasDisponibles - diasUsados).toFixed(2);
+                            
+                            await this.disponibilidadRepository.save(disponibilidad);
                         }
-                    });
+                    }
+                } else {
+                    // Si la licencia NO afecta la disponibilidad, revertir los días que ya se habían descontado
+                    const diasAnteriores = licencia.dias_calendario || 0;
+                    const diasNuevos = solicitudActualizada.dias_calendario || 0;
+                    
+                    // Si antes afectaba la disponibilidad y ahora no, devolver los días
+                    if (licencia.afecta_disponibilidad && !afectaDisponibilidad && diasAnteriores > 0) {
+                        const disponibilidad = await this.disponibilidadRepository.findOne({
+                            where: {
+                                trabajador_id: solicitudActualizada.trabajador_id,
+                                tipo_licencia_id: solicitudActualizada.tipo_licencia_id
+                            }
+                        });
 
-                    if (disponibilidad) {
-                        // Convertir a float para asegurar la precisión decimal
-                        const diasDisponibles = parseFloat(disponibilidad.dias_disponibles);
-                        let diasUsados = parseFloat(disponibilidad.dias_usados);
+                        if (disponibilidad) {
+                            const diasDisponibles = parseFloat(disponibilidad.dias_disponibles);
+                            let diasUsados = parseFloat(disponibilidad.dias_usados);
 
-                        diasUsados += diferenciaDias;
+                            // Devolver los días que se habían descontado
+                            diasUsados -= diasAnteriores;
 
-                        disponibilidad.dias_usados = diasUsados.toFixed(2);
-                        disponibilidad.dias_restantes = (diasDisponibles - diasUsados).toFixed(2);
-                        
-                        await this.disponibilidadRepository.save(disponibilidad);
+                            disponibilidad.dias_usados = Math.max(0, diasUsados).toFixed(2);
+                            disponibilidad.dias_restantes = (diasDisponibles - diasUsados).toFixed(2);
+                            
+                            await this.disponibilidadRepository.save(disponibilidad);
+                        }
                     }
                 }
 

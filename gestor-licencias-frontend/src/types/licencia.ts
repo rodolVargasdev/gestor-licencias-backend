@@ -28,6 +28,7 @@ export interface Licencia {
   tipo_olvido_marcacion?: 'ENTRADA' | 'SALIDA';
   fecha_no_asiste?: string;
   fecha_si_asiste?: string;
+  afecta_disponibilidad?: boolean;
   
   // Relaciones
   solicitud?: Solicitud;
@@ -37,4 +38,4 @@ export interface Licencia {
 }
 
 export type CreateLicenciaDTO = Omit<Licencia, 'id' | 'created_at' | 'updated_at' | 'trabajador' | 'tipo_licencia'>;
-export type UpdateLicenciaDTO = Partial<CreateLicenciaDTO>; 
+export type UpdateLicenciaDTO = Partial<CreateLicenciaDTO>;

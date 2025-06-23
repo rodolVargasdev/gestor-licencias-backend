@@ -1,3 +1,5 @@
+import type { Licencia } from './licencia';
+
 export interface Solicitud {
   id?: number;
   trabajador_id: number;
@@ -17,9 +19,13 @@ export interface Solicitud {
   fecha_no_asiste?: string;
   fecha_si_asiste?: string;
   trabajador_cambio_id?: string;
+  codigo_trabajador_cambio?: string;
+  nombre_trabajador_cambio?: string;
   fecha?: string;
   hora_inicio?: string;
   hora_fin?: string;
+  afecta_disponibilidad?: boolean;
+  licencia?: Licencia;
 }
 
 export type CreateSolicitudDTO = Omit<Solicitud, 'id' | 'created_at' | 'updated_at'>;
