@@ -16,15 +16,21 @@ module.exports = new EntitySchema({
             type: 'int'
         },
         dias_disponibles: {
-            type: 'int',
+            type: 'decimal',
+            precision: 10,
+            scale: 2,
             default: 0
         },
         dias_usados: {
-            type: 'int',
+            type: 'decimal',
+            precision: 10,
+            scale: 2,
             default: 0
         },
         dias_restantes: {
-            type: 'int',
+            type: 'decimal',
+            precision: 10,
+            scale: 2,
             default: 0
         },
         activo: {

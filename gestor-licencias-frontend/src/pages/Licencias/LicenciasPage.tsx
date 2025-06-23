@@ -49,7 +49,9 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Solicitud } from '../../types/solicitud';
+import type { TipoLicencia } from '../../types/tipoLicencia';
 import { exportToPDF, exportToExcel, formatLicenciasForExport } from '../../utils/exportLicencias';
+import { fromElSalvadorDate } from '../../utils/dateUtils';
 
 const LicenciasPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -144,8 +146,10 @@ const LicenciasPage: React.FC = () => {
     }
   };
 
-  const formatDate = (date: string) => {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: es });
+  const formatDate = (date: string | null | undefined): string => {
+    if (!date) return '-';
+    const localDate = fromElSalvadorDate(date);
+    return format(new Date(localDate + 'T00:00:00'), 'dd/MM/yyyy', { locale: es });
   };
 
   const getTrabajadorNombre = (id: number) => {
@@ -160,7 +164,7 @@ const LicenciasPage: React.FC = () => {
 
   const getTipoLicencia = (id: number): TipoLicencia | undefined => {
     const tipo = tiposLicencias.find(t => t.id === id);
-    return tipo ? JSON.parse(JSON.stringify(tipo)) : undefined;
+    return tipo;
   };
 
   const handleEdit = (solicitudId: number) => {
@@ -190,7 +194,7 @@ const LicenciasPage: React.FC = () => {
       const formattedLicencias = formatLicenciasForExport(
         filteredSolicitudes,
         trabajadores,
-        tiposLicencias,
+        tiposLicencias as TipoLicencia[],
         licencias
       );
       const title = searchTerm 
@@ -209,7 +213,7 @@ const LicenciasPage: React.FC = () => {
       const formattedLicencias = formatLicenciasForExport(
         filteredSolicitudes,
         trabajadores,
-        tiposLicencias,
+        tiposLicencias as TipoLicencia[],
         licencias
       );
       const title = searchTerm 

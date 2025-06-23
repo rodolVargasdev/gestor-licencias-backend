@@ -15,7 +15,8 @@ import {
   MenuItem
 } from '@mui/material';
 import type { CreateValidacionDTO, UpdateValidacionDTO } from '../../../types/validacion';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useAppDispatch';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import { createValidacion, updateValidacion } from '../../../store/slices/validacionesSlice';
 import { fetchTiposLicencias } from '../../../store/slices/tiposLicenciasSlice';
 import { fetchTrabajadores } from '../../../store/slices/trabajadoresSlice';

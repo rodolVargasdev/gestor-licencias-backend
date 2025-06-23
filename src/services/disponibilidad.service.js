@@ -188,16 +188,18 @@ class DisponibilidadService {
                     }, 0);
                 }
 
+                // Calcular días restantes
+                const diasDisponibles = parseFloat(disponibilidad.dias_disponibles) || 0;
                 disponibilidad.dias_usados = usados;
-                disponibilidad.dias_restantes = disponibilidad.dias_disponibles - usados;
-                // Agregar cantidad_registros si periodo_control es 'ninguno'
+                disponibilidad.dias_restantes = diasDisponibles - usados;
+
+                // Lógica especial para licencias sin periodo de control (por evento)
                 if (tipoLicencia.periodo_control === 'ninguno') {
                     disponibilidad.cantidad_registros = licenciasActivas.length;
-                    // Para tipos sin período, mostrar información especial
+                    // Si la duración máxima es 0, no hay un "banco" de días, por lo que la disponibilidad es informativa.
                     if (tipoLicencia.duracion_maxima === 0) {
                         disponibilidad.dias_disponibles = 0;
                         disponibilidad.dias_restantes = 0;
-                        disponibilidad.dias_usados = usados;
                     }
                 }
                 await this.disponibilidadRepository.save(disponibilidad);

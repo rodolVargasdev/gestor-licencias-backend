@@ -5,6 +5,7 @@ const TipoLicencia = require('../models/tipo-licencia.model');
 const Disponibilidad = require('../models/disponibilidad.model');
 const Licencia = require('../models/licencia.model');
 const { Between } = require('typeorm');
+const { normalizeDates } = require('../utils/dateUtils');
 
 class SolicitudesService {
     constructor() {
@@ -17,9 +18,12 @@ class SolicitudesService {
 
     async create(solicitudData) {
         try {
+            // Normalizar las fechas a la zona horaria de El Salvador
+            const normalizedData = normalizeDates(solicitudData);
+            
             // Verificar si el trabajador existe
             const trabajador = await this.trabajadoresRepository.findOne({
-                where: { id: solicitudData.trabajador_id }
+                where: { id: normalizedData.trabajador_id }
             });
 
             if (!trabajador) {
@@ -28,7 +32,7 @@ class SolicitudesService {
 
             // Verificar si el tipo de licencia existe
             const tipoLicencia = await this.tiposLicenciasRepository.findOne({
-                where: { id: solicitudData.tipo_licencia_id }
+                where: { id: normalizedData.tipo_licencia_id }
             });
 
             if (!tipoLicencia) {
@@ -44,28 +48,28 @@ class SolicitudesService {
             let diasSolicitados = 0;
 
             if (!esOlvidoMarcacion) {
-                diasHabiles = this.calcularDiasHabiles(solicitudData.fecha_inicio, solicitudData.fecha_fin);
-                diasCalendario = this.calcularDiasCalendario(solicitudData.fecha_inicio, solicitudData.fecha_fin);
+                diasHabiles = this.calcularDiasHabiles(normalizedData.fecha_inicio, normalizedData.fecha_fin);
+                diasCalendario = this.calcularDiasCalendario(normalizedData.fecha_inicio, normalizedData.fecha_fin);
                 diasSolicitados = tipoLicencia.goce_salario ? diasHabiles : diasCalendario;
             }
 
-            solicitudData.dias_habiles = diasHabiles;
-            solicitudData.dias_calendario = diasCalendario;
-            solicitudData.dias_solicitados = diasSolicitados;
+            normalizedData.dias_habiles = diasHabiles;
+            normalizedData.dias_calendario = diasCalendario;
+            normalizedData.dias_solicitados = diasSolicitados;
 
             // Para olvido de marcación, validar cantidad de eventos por mes
             if (esOlvidoMarcacion) {
-                if (!solicitudData.tipo_olvido_marcacion || solicitudData.tipo_olvido_marcacion === '' || !['ENTRADA', 'SALIDA'].includes(solicitudData.tipo_olvido_marcacion)) {
+                if (!normalizedData.tipo_olvido_marcacion || normalizedData.tipo_olvido_marcacion === '' || !['ENTRADA', 'SALIDA'].includes(normalizedData.tipo_olvido_marcacion)) {
                     throw new Error('Debe especificar si el olvido fue de ENTRADA o SALIDA');
                 }
                 
                 // Validar máximo eventos por mes
-                const mes = solicitudData.fecha_inicio.slice(0, 7);
-                const ultimoDiaMes = new Date(solicitudData.fecha_inicio.slice(0, 4), solicitudData.fecha_inicio.slice(5, 7), 0).getDate();
+                const mes = normalizedData.fecha_inicio.slice(0, 7);
+                const ultimoDiaMes = new Date(normalizedData.fecha_inicio.slice(0, 4), normalizedData.fecha_inicio.slice(5, 7), 0).getDate();
                 const count = await this.solicitudesRepository.count({
                     where: {
-                        trabajador_id: solicitudData.trabajador_id,
-                        tipo_licencia_id: solicitudData.tipo_licencia_id,
+                        trabajador_id: normalizedData.trabajador_id,
+                        tipo_licencia_id: normalizedData.tipo_licencia_id,
                         fecha_inicio: Between(`${mes}-01`, `${mes}-${ultimoDiaMes.toString().padStart(2, '0')}`)
                     }
                 });
@@ -78,16 +82,16 @@ class SolicitudesService {
                 if (tipoLicencia.periodo_control !== 'ninguno') {
                     let disponibilidad = await this.disponibilidadRepository.findOne({
                         where: {
-                            trabajador_id: solicitudData.trabajador_id,
-                            tipo_licencia_id: solicitudData.tipo_licencia_id
+                            trabajador_id: normalizedData.trabajador_id,
+                            tipo_licencia_id: normalizedData.tipo_licencia_id
                         }
                     });
 
                     if (!disponibilidad) {
                         // Si no existe, crear una nueva disponibilidad
                         disponibilidad = this.disponibilidadRepository.create({
-                            trabajador_id: solicitudData.trabajador_id,
-                            tipo_licencia_id: solicitudData.tipo_licencia_id,
+                            trabajador_id: normalizedData.trabajador_id,
+                            tipo_licencia_id: normalizedData.tipo_licencia_id,
                             dias_disponibles: tipoLicencia.duracion_maxima,
                             dias_usados: 0,
                             dias_restantes: tipoLicencia.duracion_maxima
@@ -102,7 +106,7 @@ class SolicitudesService {
                 }
             }
 
-            const solicitud = this.solicitudesRepository.create(solicitudData);
+            const solicitud = this.solicitudesRepository.create(normalizedData);
             const savedSolicitud = await this.solicitudesRepository.save(solicitud);
 
             // Si la solicitud es APROBADA, crear la licencia y actualizar disponibilidad
@@ -117,16 +121,22 @@ class SolicitudesService {
                     });
                     
                     if (disponibilidad) {
-                        // Para licencias por horas, usar horas totales; para días, usar días hábiles
+                        // Convertir a float para asegurar la precisión decimal
+                        const diasDisponibles = parseFloat(disponibilidad.dias_disponibles);
+                        let diasUsados = parseFloat(disponibilidad.dias_usados);
+
                         if (tipoLicencia.unidad_control === 'horas') {
                             const inicio = new Date(savedSolicitud.fecha_inicio);
                             const fin = new Date(savedSolicitud.fecha_fin);
                             const horasCalculadas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
-                            disponibilidad.dias_usados += horasCalculadas;
+                            diasUsados += horasCalculadas;
                         } else {
-                            disponibilidad.dias_usados += diasHabiles;
+                            diasUsados += diasHabiles;
                         }
-                        disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+
+                        disponibilidad.dias_usados = diasUsados.toFixed(2);
+                        disponibilidad.dias_restantes = (diasDisponibles - diasUsados).toFixed(2);
+                        
                         await this.disponibilidadRepository.save(disponibilidad);
                     }
                 }
@@ -193,19 +203,22 @@ class SolicitudesService {
 
     async update(id, solicitudData) {
         try {
+            // Normalizar las fechas a la zona horaria de El Salvador
+            const normalizedData = normalizeDates(solicitudData);
+            
             const solicitud = await this.findById(id);
 
             // Si se están actualizando las fechas, recalcular días
-            if (solicitudData.fecha_inicio || solicitudData.fecha_fin) {
-                const fechaInicio = solicitudData.fecha_inicio || solicitud.fecha_inicio;
-                const fechaFin = solicitudData.fecha_fin || solicitud.fecha_fin;
+            if (normalizedData.fecha_inicio || normalizedData.fecha_fin) {
+                const fechaInicio = normalizedData.fecha_inicio || solicitud.fecha_inicio;
+                const fechaFin = normalizedData.fecha_fin || solicitud.fecha_fin;
 
                 const diasHabiles = this.calcularDiasHabiles(fechaInicio, fechaFin);
                 const diasCalendario = this.calcularDiasCalendario(fechaInicio, fechaFin);
 
-                solicitudData.dias_habiles = diasHabiles;
-                solicitudData.dias_calendario = diasCalendario;
-                solicitudData.dias_solicitados = solicitud.tipo_licencia.goce_salario ? diasHabiles : diasCalendario;
+                normalizedData.dias_habiles = diasHabiles;
+                normalizedData.dias_calendario = diasCalendario;
+                normalizedData.dias_solicitados = solicitud.tipo_licencia.goce_salario ? diasHabiles : diasCalendario;
             }
 
             // Buscar la licencia asociada antes de actualizar la solicitud
@@ -214,7 +227,7 @@ class SolicitudesService {
             });
 
             // Actualizar la solicitud
-            Object.assign(solicitud, solicitudData);
+            Object.assign(solicitud, normalizedData);
             const solicitudActualizada = await this.solicitudesRepository.save(solicitud);
 
             // Si existe una licencia asociada, actualizarla
@@ -234,8 +247,15 @@ class SolicitudesService {
                     });
 
                     if (disponibilidad) {
-                        disponibilidad.dias_usados += diferenciaDias;
-                        disponibilidad.dias_restantes = disponibilidad.dias_disponibles - disponibilidad.dias_usados;
+                        // Convertir a float para asegurar la precisión decimal
+                        const diasDisponibles = parseFloat(disponibilidad.dias_disponibles);
+                        let diasUsados = parseFloat(disponibilidad.dias_usados);
+
+                        diasUsados += diferenciaDias;
+
+                        disponibilidad.dias_usados = diasUsados.toFixed(2);
+                        disponibilidad.dias_restantes = (diasDisponibles - diasUsados).toFixed(2);
+                        
                         await this.disponibilidadRepository.save(disponibilidad);
                     }
                 }

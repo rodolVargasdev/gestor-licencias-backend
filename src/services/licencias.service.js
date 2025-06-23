@@ -84,6 +84,12 @@ class LicenciasService {
             if (cod === 'MATERNIDAD' && consumo > tipoLicencia.duracion_maxima) {
                 throw new Error('No puede solicitar más de 112 días para este permiso.');
             }
+            
+            // Validación de duración máxima para licencias con periodo_control 'ninguno' y duracion_maxima > 0
+            if (tipoLicencia.periodo_control === 'ninguno' && tipoLicencia.duracion_maxima > 0 && consumo > tipoLicencia.duracion_maxima) {
+                throw new Error(`No puede solicitar más de ${tipoLicencia.duracion_maxima} ${tipoLicencia.unidad_control === 'horas' ? 'horas' : 'días'} para este permiso.`);
+            }
+            
             // Lactancia materna: autocompletar fecha fin (inicio + 6 meses)
             if (cod === 'LACTANCIA' && licenciaData.fecha_inicio) {
                 const inicio = new Date(licenciaData.fecha_inicio);

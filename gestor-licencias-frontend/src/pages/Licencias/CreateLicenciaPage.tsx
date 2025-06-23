@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,7 +13,12 @@ import {
   Alert,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Grid,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { differenceInDays } from 'date-fns';
@@ -20,11 +26,11 @@ import { createSolicitud } from '../../store/slices/solicitudesSlice';
 import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
 import { fetchDisponibilidadByTrabajador } from '../../store/slices/disponibilidadSlice';
-import type { RootState, AppDispatch } from '../../store';
 import type { Solicitud } from '../../types/solicitud';
 import type { DisponibilidadTrabajador } from '../../types/disponibilidad';
-import type { PayloadAction } from '@reduxjs/toolkit';
 import type { TipoLicencia } from '../../types/tipoLicencia';
+import { CheckCircle as CheckCircleIcon, Cancel as CancelIcon, Warning as WarningIcon, Info as InfoIcon } from '@mui/icons-material';
+import { toElSalvadorDate, combineDateAndTime, getCurrentElSalvadorDate } from '../../utils/dateUtils';
 
 interface FormData {
   trabajador_id: number;
@@ -49,20 +55,20 @@ interface FormData {
 }
 
 const CreateLicenciaPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   
-  const trabajadores = useSelector((state: RootState) => state.trabajadores.items);
-  const tiposLicencias = useSelector((state: RootState) => state.tiposLicencias.items);
+  const trabajadores = useAppSelector(state => state.trabajadores.items);
+  const tiposLicencias = useAppSelector((state) => state.tiposLicencias.items);
 
   const [formData, setFormData] = useState<FormData>({
     trabajador_id: 0,
     tipo_licencia_id: 0,
-    fecha_inicio: new Date().toISOString().split('T')[0],
-    fecha_fin: new Date().toISOString().split('T')[0],
+    fecha_inicio: getCurrentElSalvadorDate(),
+    fecha_fin: getCurrentElSalvadorDate(),
     motivo: '',
     estado: 'APROBADA',
-    fecha_solicitud: new Date().toISOString().split('T')[0],
+    fecha_solicitud: getCurrentElSalvadorDate(),
     justificacion: '',
     documento: undefined,
     fecha_no_asiste: '',
@@ -71,15 +77,9 @@ const CreateLicenciaPage: React.FC = () => {
     tipo_olvido_marcacion: undefined,
   });
 
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error'
-  });
-
-  const [disponibilidad, setDisponibilidad] = useState<number | null>(null);
-  const [periodoRenovacion, setPeriodoRenovacion] = useState<string>('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' | 'info' });
   const [codigoTrabajador, setCodigoTrabajador] = useState('');
+  const [disponibilidad, setDisponibilidad] = useState<number | null>(null);
 
   const selectedTipoLicencia: TipoLicencia | undefined = useMemo(() => {
     const raw = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
@@ -98,19 +98,14 @@ const CreateLicenciaPage: React.FC = () => {
   useEffect(() => {
     if (formData.trabajador_id && formData.tipo_licencia_id) {
       dispatch(fetchDisponibilidadByTrabajador(formData.trabajador_id)).then((action) => {
-        const payload = (action as PayloadAction<DisponibilidadTrabajador[]>).payload;
-        if (payload) {
-          const disp = payload.find((d) => d.tipo_licencia.id === Number(formData.tipo_licencia_id));
-          setDisponibilidad(disp ? disp.dias_restantes : null);
-        }
+        const payload = action.payload as DisponibilidadTrabajador[];
+        const disp = payload.find(d => d.tipo_licencia.id === Number(formData.tipo_licencia_id));
+        setDisponibilidad(disp?.dias_restantes ?? null);
       });
-      const tipo = tiposLicencias.find(t => t.id === Number(formData.tipo_licencia_id));
-      setPeriodoRenovacion(tipo?.periodo_renovacion || '');
     } else {
       setDisponibilidad(null);
-      setPeriodoRenovacion('');
     }
-  }, [formData.trabajador_id, formData.tipo_licencia_id, tiposLicencias, dispatch]);
+  }, [formData.trabajador_id, formData.tipo_licencia_id, dispatch]);
 
   useEffect(() => {
     if (codigoTrabajador.trim() !== '') {
@@ -153,8 +148,33 @@ const CreateLicenciaPage: React.FC = () => {
           if (dias <= 0) {
             errorMsg = 'La fecha de fin debe ser posterior o igual a la de inicio';
           }
+          // Validar duración máxima para licencias con periodo_control 'ninguno' y duracion_maxima > 0
+          if (selectedTipoLicencia.periodo_control === 'ninguno' && selectedTipoLicencia.duracion_maxima > 0 && dias > selectedTipoLicencia.duracion_maxima) {
+            errorMsg = `No puede solicitar más de ${selectedTipoLicencia.duracion_maxima} días para este permiso.`;
+          }
         } else {
           errorMsg = 'Las fechas ingresadas no son válidas';
+        }
+      }
+    }
+    
+    if (selectedTipoLicencia?.unidad_control === 'horas') {
+      if (!formData.fecha || !formData.hora_inicio || !formData.hora_fin) {
+        errorMsg = 'Debe ingresar fecha y hora de inicio y fin';
+      } else {
+        const inicio = new Date(`${formData.fecha}T${formData.hora_inicio}`);
+        const fin = new Date(`${formData.fecha}T${formData.hora_fin}`);
+        if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
+          const horas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+          if (horas <= 0) {
+            errorMsg = 'La hora de fin debe ser posterior a la de inicio';
+          }
+          // Validar duración máxima para licencias con periodo_control 'ninguno' y duracion_maxima > 0
+          if (selectedTipoLicencia.periodo_control === 'ninguno' && selectedTipoLicencia.duracion_maxima > 0 && horas > selectedTipoLicencia.duracion_maxima) {
+            errorMsg = `No puede solicitar más de ${selectedTipoLicencia.duracion_maxima} horas para este permiso.`;
+          }
+        } else {
+          errorMsg = 'Las horas ingresadas no son válidas';
         }
       }
     }
@@ -201,14 +221,36 @@ const CreateLicenciaPage: React.FC = () => {
         ...(diasCalendario !== undefined ? { dias_calendario: diasCalendario } : {})
       };
 
+      // Convertir fechas a zona horaria de El Salvador antes de enviar
+      if (solicitudData.fecha_inicio) {
+        solicitudData.fecha_inicio = toElSalvadorDate(solicitudData.fecha_inicio);
+      }
+      if (solicitudData.fecha_fin) {
+        solicitudData.fecha_fin = toElSalvadorDate(solicitudData.fecha_fin);
+      }
+      if (solicitudData.fecha_solicitud) {
+        solicitudData.fecha_solicitud = toElSalvadorDate(solicitudData.fecha_solicitud);
+      }
+      if (solicitudData.fecha_no_asiste) {
+        solicitudData.fecha_no_asiste = toElSalvadorDate(solicitudData.fecha_no_asiste);
+      }
+      if (solicitudData.fecha_si_asiste) {
+        solicitudData.fecha_si_asiste = toElSalvadorDate(solicitudData.fecha_si_asiste);
+      }
+
+      // Para licencias por horas, combinar fecha y hora correctamente
+      if (selectedTipoLicencia?.unidad_control === 'horas' && solicitudData.fecha && solicitudData.hora_inicio && solicitudData.hora_fin) {
+        solicitudData.fecha_inicio = combineDateAndTime(solicitudData.fecha, solicitudData.hora_inicio);
+        solicitudData.fecha_fin = combineDateAndTime(solicitudData.fecha, solicitudData.hora_fin);
+      }
+
       // Remover tipo_olvido_marcacion si está vacío para evitar errores de enum
       if (solicitudData.tipo_olvido_marcacion === undefined) {
         delete solicitudData.tipo_olvido_marcacion;
       }
 
       const action = await dispatch(createSolicitud(solicitudData));
-      const newSolicitud = action.payload as Solicitud;
-      if (formData.trabajador_id) {
+      if (action.payload && formData.trabajador_id) {
         await dispatch(fetchDisponibilidadByTrabajador(formData.trabajador_id));
       }
       setSnackbar((prev: typeof snackbar) => ({
@@ -217,8 +259,8 @@ const CreateLicenciaPage: React.FC = () => {
         message: 'Solicitud creada correctamente',
         severity: 'success'
       }));
-      if (newSolicitud && newSolicitud.id) {
-        navigate(`/licencias/${newSolicitud.id}`);
+      if (action.payload && (action.payload as Solicitud).id) {
+        navigate(`/licencias/${(action.payload as Solicitud).id}`);
       } else {
         navigate('/licencias');
       }
@@ -354,13 +396,39 @@ const CreateLicenciaPage: React.FC = () => {
 
             {/* POR HORAS */}
             {selectedTipoLicencia?.unidad_control === 'horas' && codigoLicencia !== 'OLVIDO-ENT' && codigoLicencia !== 'OLVIDO-SAL' && (
-              <>
-                <TextField label="Fecha" name="fecha" type="date" value={formData.fecha || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
-                <TextField label="Hora de inicio" name="hora_inicio" type="time" value={formData.hora_inicio || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
-                <TextField label="Hora de fin" name="hora_fin" type="time" value={formData.hora_fin || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
-                <input type="hidden" name="fecha_inicio" value={formData.fecha_inicio || ''} />
-                <input type="hidden" name="fecha_fin" value={formData.fecha_fin || ''} />
-              </>
+              <React.Fragment>
+                <Grid item xs={12} md={4}>
+                  <TextField label="Fecha" name="fecha" type="date" value={formData.fecha || ''} onChange={handleChange} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="Hora de inicio"
+                    name="hora_inicio"
+                    type="time"
+                    value={formData.hora_inicio || ''}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    required
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 60 }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="Hora de fin"
+                    name="hora_fin"
+                    type="time"
+                    value={formData.hora_fin || ''}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    required
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 60 }}
+                  />
+                </Grid>
+              </React.Fragment>
             )}
 
             {/* POR DÍAS (default) */}
@@ -423,41 +491,66 @@ const CreateLicenciaPage: React.FC = () => {
               InputProps={{ readOnly: true }}
             />
 
-            {formData.trabajador_id && formData.tipo_licencia_id && selectedTipoLicencia && selectedTipoLicencia.periodo_control !== 'ninguno' && (
-              <Box sx={{ gridColumn: '1 / span 2', mb: 2 }}>
-                <Alert
-                  severity={
-                    disponibilidad !== null && ((selectedTipoLicencia.unidad_control === 'días' && formData.dias_calendario && disponibilidad < formData.dias_calendario) ||
-                    (selectedTipoLicencia.unidad_control === 'horas' && formData.fecha && formData.hora_inicio && formData.hora_fin && (() => {
-                      const inicio = new Date(`${formData.fecha}T${formData.hora_inicio}`);
-                      const fin = new Date(`${formData.fecha}T${formData.hora_fin}`);
-                      const horas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
-                      return disponibilidad < horas;
-                    })()))
-                      ? 'error'
-                      : 'info'
-                  }
-                >
-                  Disponibilidad restante: <b>{disponibilidad !== null ? disponibilidad : 'N/A'}</b> {selectedTipoLicencia.unidad_control === 'horas' ? 'horas' : 'días'}.<br />
-                  Máximo permitido por solicitud: <b>{selectedTipoLicencia.duracion_maxima}</b> {selectedTipoLicencia.unidad_control === 'horas' ? 'horas' : 'días'}<br />
-                  Periodo de renovación: <b>{periodoRenovacion ? (periodoRenovacion === 'ANUAL' ? 'Anual' : 'Mensual') : 'N/A'}</b>
-                  {disponibilidad !== null && selectedTipoLicencia.unidad_control === 'días' && formData.dias_calendario && disponibilidad < formData.dias_calendario && (
-                    <Typography color="error" component="div">
-                      No hay suficientes días disponibles para esta solicitud
-                    </Typography>
-                  )}
-                  {selectedTipoLicencia.unidad_control === 'horas' && formData.fecha && formData.hora_inicio && formData.hora_fin && (() => {
-                    const inicio = new Date(`${formData.fecha}T${formData.hora_inicio}`);
-                    const fin = new Date(`${formData.fecha}T${formData.hora_fin}`);
-                    const horas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
-                    if (disponibilidad !== null && horas > 0 && disponibilidad < horas) {
-                      return <Typography color="error" component="div">No hay suficientes horas disponibles para esta solicitud</Typography>;
-                    }
-                    if (selectedTipoLicencia.duracion_maxima && horas > selectedTipoLicencia.duracion_maxima) {
-                      return <Typography color="error" component="div">No puede solicitar más de {selectedTipoLicencia.duracion_maxima} horas para este permiso</Typography>;
-                    }
-                    return null;
-                  })()}
+            {formData.trabajador_id && formData.tipo_licencia_id && selectedTipoLicencia && (
+              <Box sx={{ gridColumn: '1 / -1', mb: 2 }}>
+                <Alert severity="info" icon={<InfoIcon fontSize="inherit" />} sx={{ width: '100%' }}>
+                  <Typography variant="h6" gutterBottom>
+                    Reglas de la Licencia: {selectedTipoLicencia.nombre}
+                  </Typography>
+                  <List dense sx={{ p: 0 }}>
+                    <ListItem sx={{ py: 0.5 }}>
+                      <ListItemText 
+                        primary="Período de Control" 
+                        secondary={
+                          selectedTipoLicencia.periodo_control === 'ninguno' 
+                            ? 'Sin período (se pueden realizar múltiples solicitudes)' 
+                            : `Control por ${selectedTipoLicencia.periodo_control}`
+                        }
+                      />
+                    </ListItem>
+                    
+                    {selectedTipoLicencia.periodo_control !== 'ninguno' ? (
+                      <>
+                        <ListItem sx={{ py: 0.5 }}>
+                          <ListItemText 
+                            primary={`Límite Total por ${selectedTipoLicencia.periodo_control}`} 
+                            secondary={`${selectedTipoLicencia.duracion_maxima} ${selectedTipoLicencia.unidad_control}`}
+                          />
+                        </ListItem>
+                        <ListItem sx={{ py: 0.5 }}>
+                          <ListItemText 
+                            primary="Disponibilidad Restante" 
+                            secondary={`${disponibilidad !== null ? disponibilidad : 'Calculando...'} ${selectedTipoLicencia.unidad_control}`} 
+                          />
+                        </ListItem>
+                      </>
+                    ) : (
+                      <ListItem sx={{ py: 0.5 }}>
+                        <ListItemText 
+                          primary="Límite por Solicitud" 
+                          secondary={
+                            selectedTipoLicencia.duracion_maxima > 0 
+                              ? `${selectedTipoLicencia.duracion_maxima} ${selectedTipoLicencia.unidad_control}` 
+                              : 'Duración variable según necesidad'
+                          } 
+                        />
+                      </ListItem>
+                    )}
+
+                    <ListItem sx={{ py: 0.5 }}>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        {selectedTipoLicencia.pago_haberes ? <CheckCircleIcon color="success" /> : <CancelIcon color="error" />}
+                      </ListItemIcon>
+                      <ListItemText primary="Cubre goce de salario" />
+                    </ListItem>
+                    
+                    <ListItem sx={{ py: 0.5 }}>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        {selectedTipoLicencia.requiere_documentacion ? <WarningIcon color="warning" /> : <InfoIcon color="disabled" />}
+                      </ListItemIcon>
+                      <ListItemText primary={selectedTipoLicencia.requiere_documentacion ? 'Requiere documento de soporte' : 'No requiere documento de soporte'} />
+                    </ListItem>
+                  </List>
                 </Alert>
               </Box>
             )}

@@ -26,11 +26,14 @@ export interface Licencia {
   justificacion?: string;
   documento?: File;
   tipo_olvido_marcacion?: 'ENTRADA' | 'SALIDA';
+  fecha_no_asiste?: string;
+  fecha_si_asiste?: string;
   
   // Relaciones
   solicitud?: Solicitud;
   trabajador?: Trabajador;
   tipo_licencia?: TipoLicencia;
+  trabajador_cambio?: Trabajador;
 }
 
 export type CreateLicenciaDTO = Omit<Licencia, 'id' | 'created_at' | 'updated_at' | 'trabajador' | 'tipo_licencia'>;
