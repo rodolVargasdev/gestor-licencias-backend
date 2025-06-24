@@ -114,8 +114,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Gestor de Licencias
+            Gestor de Licencias 
           </Typography>
+          <img src="/favicon.ico" alt="Logo" style={{ width: 32, height: 32, marginLeft: 10 }} />
         </Toolbar>
       </AppBar>
       <Box
