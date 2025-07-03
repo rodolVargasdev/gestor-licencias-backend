@@ -245,9 +245,27 @@ const LicenciasPage: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Gestión de Licencias</Typography>
-        <Stack direction="row" spacing={2}>
+      
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', gap: 2, width: '100%', alignItems: 'center' }}>
+        
+      <Typography variant="h4" sx={{ mb: 3 }}>Gestión de Licencias</Typography>
+
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', width: '70%' }}>
+          <TextField
+            sx={{ flexGrow: 1, minWidth: 300 }}
+            variant="outlined"
+            placeholder="Buscar por ID, trabajador, tipo de licencia, estado o motivo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
           <Button
             variant="outlined"
             color="primary"
@@ -256,6 +274,7 @@ const LicenciasPage: React.FC = () => {
           >
             Exportar
           </Button>
+          
           <Button
             variant="contained"
             color="primary"
@@ -264,31 +283,8 @@ const LicenciasPage: React.FC = () => {
           >
             Nueva Licencia
           </Button>
-        </Stack>
+        </Box>
       </Box>
-
-      {/* Buscador */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Buscar por ID, trabajador, tipo de licencia, estado o motivo..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <FilterListIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Paper>
 
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer sx={{ maxHeight: 600 }}>
