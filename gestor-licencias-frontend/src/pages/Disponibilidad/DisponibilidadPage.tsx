@@ -270,12 +270,39 @@ const DisponibilidadPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, width: '100%', maxWidth: 1200 }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, width: '100%', maxWidth: 1200, alignItems: 'center' }}>
         <Typography variant="h5" component="h1">
           Disponibilidad
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label="Buscar por código"
+            variant="outlined"
+            size="small"
+            value={codigoBusqueda}
+            onChange={(e) => setCodigoBusqueda(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: 200 }}
+          />
+
+          <Tooltip title={lastUpdate ? `Última actualización: ${new Date(lastUpdate).toLocaleString()}` : ''}>
+            <Button
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              disabled={!trabajadorSeleccionado || loading}
+            >
+              Actualizar
+            </Button>
+          </Tooltip>
+
           <Button
             variant="contained"
             color="success"
@@ -286,36 +313,8 @@ const DisponibilidadPage: React.FC = () => {
           </Button>
         </Box>
       </Box>
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <TextField
-          label="Buscar por código"
-          variant="outlined"
-          size="small"
-          value={codigoBusqueda}
-          onChange={(e) => setCodigoBusqueda(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ width: 200 }}
-        />
 
-        <Tooltip title={lastUpdate ? `Última actualización: ${new Date(lastUpdate).toLocaleString()}` : ''}>
-          <Button
-            variant="contained"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            disabled={!trabajadorSeleccionado || loading}
-          >
-            Actualizar
-          </Button>
-        </Tooltip>
-      </Box>
-
-      <Box sx={{ height: 400, width: '100%' }}>
+      <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           rows={disponibilidadFiltrada}
           columns={columns}

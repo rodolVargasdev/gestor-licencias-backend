@@ -28,7 +28,7 @@ import { createSolicitud } from '../../store/slices/solicitudesSlice';
 import { fetchTrabajadores } from '../../store/slices/trabajadoresSlice';
 import { fetchTiposLicencias } from '../../store/slices/tiposLicenciasSlice';
 import { fetchDisponibilidadByTrabajador } from '../../store/slices/disponibilidadSlice';
-import type { Solicitud } from '../../types/solicitud';
+
 import type { DisponibilidadTrabajador } from '../../types/disponibilidad';
 import type { TipoLicencia } from '../../types/tipoLicencia';
 import { CheckCircle as CheckCircleIcon, Cancel as CancelIcon, Warning as WarningIcon, Info as InfoIcon } from '@mui/icons-material';
@@ -270,11 +270,7 @@ const CreateLicenciaPage: React.FC = () => {
         message: 'Solicitud creada correctamente',
         severity: 'success'
       }));
-      if (action.payload && (action.payload as Solicitud).id) {
-        navigate(`/licencias/${(action.payload as Solicitud).id}`);
-      } else {
-        navigate('/licencias');
-      }
+      navigate('/licencias');
     } catch (error: unknown) {
       setSnackbar((prev: typeof snackbar) => ({
         ...prev,
@@ -304,7 +300,7 @@ const CreateLicenciaPage: React.FC = () => {
         Nueva Licencia
       </Typography>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ pt: 4, pb: 4, pl: 10, pr: 10 }} elevation={0}>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
             <TextField
@@ -592,6 +588,7 @@ const CreateLicenciaPage: React.FC = () => {
                 type="submit"
                 variant="contained"
                 color="primary"
+                onClick={() => navigate('/licencias')}
               >
                 Crear Licencia
               </Button>

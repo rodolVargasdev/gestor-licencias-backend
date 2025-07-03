@@ -40,7 +40,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import InfoIcon from '@mui/icons-material/Info';
+
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -164,7 +164,7 @@ const LicenciasPage: React.FC = () => {
 
   const getTipoLicencia = (id: number): TipoLicencia | undefined => {
     const tipo = tiposLicencias.find(t => t.id === id);
-    return tipo;
+    return tipo as TipoLicencia | undefined;
   };
 
   const handleEdit = (solicitudId: number) => {
@@ -194,7 +194,7 @@ const LicenciasPage: React.FC = () => {
       const formattedLicencias = formatLicenciasForExport(
         filteredSolicitudes,
         trabajadores,
-        tiposLicencias as TipoLicencia[],
+        tiposLicencias as unknown as TipoLicencia[],
         licencias
       );
       const title = searchTerm 
@@ -213,7 +213,7 @@ const LicenciasPage: React.FC = () => {
       const formattedLicencias = formatLicenciasForExport(
         filteredSolicitudes,
         trabajadores,
-        tiposLicencias as TipoLicencia[],
+        tiposLicencias as unknown as TipoLicencia[],
         licencias
       );
       const title = searchTerm 
@@ -415,15 +415,26 @@ const LicenciasPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="Ver detalles">
+                        {/* <Tooltip title="Ver detalles">
                           <IconButton
                             size="small"
                             color="primary"
-                            onClick={() => navigate(`/licencias/${solicitud.id}`)}
+                            onClick={() => {
+                              const licencia = licencias.find(l => l.solicitud_id === solicitud.id);
+                              if (licencia) {
+                                navigate(`/licencias/${licencia.id}`);
+                              } else {
+                                setSnackbar({ 
+                                  open: true, 
+                                  message: 'No se encontró la licencia asociada a esta solicitud', 
+                                  severity: 'error' 
+                                });
+                              }
+                            }}
                           >
                             <InfoIcon />
                           </IconButton>
-                        </Tooltip>
+                        </Tooltip> */}
                         <Tooltip title="Editar">
                           <IconButton
                             size="small"

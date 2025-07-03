@@ -1,5 +1,5 @@
 import api from './api';
-import type { TipoLicencia } from '../store/slices/tiposLicenciasSlice';
+import type { TipoLicencia } from '../types/tipoLicencia';
 
 export const tiposLicenciasService = {
   getAll: () => api.get<TipoLicencia[]>('/tipos-licencias'),

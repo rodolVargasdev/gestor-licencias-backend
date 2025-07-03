@@ -1,37 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { tiposLicenciasService } from '../../services/tiposLicencias.service';
-
-export interface TipoLicencia {
-  id: number;
-  codigo: string;
-  nombre: string;
-  descripcion: string;
-  tipo_duracion: 'DIAS' | 'HORAS' | 'CANTIDAD';
-  periodo_renovacion: 'MENSUAL' | 'ANUAL';
-  duracion_maxima: number;
-  requiere_justificacion: boolean;
-  requiere_aprobacion_especial: boolean;
-  requiere_documentacion: boolean;
-  pago_haberes: boolean;
-  acumulable: boolean;
-  transferible: boolean;
-  aplica_genero: boolean;
-  genero_aplicable: 'M' | 'F' | 'A';
-  aplica_antiguedad: boolean;
-  antiguedad_minima: number | null;
-  aplica_edad: boolean;
-  edad_minima: number | null;
-  edad_maxima: number | null;
-  aplica_departamento: boolean;
-  departamentos_aplicables: string | null;
-  aplica_cargo: boolean;
-  cargos_aplicables: string | null;
-  aplica_tipo_personal: boolean;
-  tipos_personal_aplicables: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { TipoLicencia } from '../../types/tipoLicencia';
 
 interface TiposLicenciasState {
   items: TipoLicencia[];

@@ -116,7 +116,7 @@ const TiposLicenciasPage: React.FC = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Tipos de Licencias</Typography>
         <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => navigate('/tipos-licencias/nuevo')}>
-          Nuevo Tipo de Licencia
+           Licencia
         </Button>
       </Box>
       <Paper>
@@ -177,9 +177,9 @@ const TiposLicenciasPage: React.FC = () => {
                     {renderChip(tipo.activo ? 'Activo' : 'Inactivo', tipo.activo ? 'success' : 'error')}
                   </TableCell>
                   <TableCell>
-                    <IconButton color="primary" onClick={() => navigate(`/tipos-licencias/editar/${tipo.id}`)}>
+                    {/* <IconButton color="primary" onClick={() => navigate(`/tipos-licencias/editar/${tipo.id}`)}>
                       <EditIcon />
-                    </IconButton>
+                    </IconButton> */}
                     <IconButton color="error" onClick={() => handleDeleteClick(tipo.id)}>
                       <DeleteIcon />
                     </IconButton>

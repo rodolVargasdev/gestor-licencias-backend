@@ -239,7 +239,7 @@ const LicenciaDetailsPage: React.FC = () => {
               Motivo
             </Typography>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-              {licencia.motivo || 'Sin motivo'}
+              {licencia.motivo_cancelacion || 'Sin motivo'}
             </Typography>
           </Grid>
 
