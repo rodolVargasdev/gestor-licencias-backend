@@ -80,8 +80,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
+      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
+        Menú de opciones y resumen
       </Typography>
       {/* Tarjetas de resumen */}
       <Grid 
@@ -126,6 +126,7 @@ const Dashboard: React.FC = () => {
                         borderRadius: '50%',
                       p: 2,
                       mb: 2,
+                      margin: 1,
                       color: 'white',
                       display: 'flex',
                       alignItems: 'center',
@@ -135,11 +136,11 @@ const Dashboard: React.FC = () => {
                     >
                       {item.icon}
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, textAlign: 'center', mb: 1, fontSize: 20, color: '#222', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 500, textAlign: 'center', mb: 1, fontSize: 20, color: '#222', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                     {item.title}
                   </Typography>
                   <Typography variant="h3" align="center" sx={{ fontWeight: 800, color: item.color, fontSize: 44 }}>
-                    {item.count}
+                    {item.title === 'Disponibilidad' ? '' : item.count}
                   </Typography>
                 </CardContent>
               </CardActionArea>

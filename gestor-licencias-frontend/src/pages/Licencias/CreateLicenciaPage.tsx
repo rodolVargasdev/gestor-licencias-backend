@@ -345,6 +345,11 @@ const CreateLicenciaPage: React.FC = () => {
             </Grid>
 
             <Grid item xs={12} md={6}>
+            <legend>
+                <Typography variant="body2" color="text.secondary">
+                  ¿Esta licencia es actual o pasada?
+                </Typography>
+              </legend>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -356,6 +361,7 @@ const CreateLicenciaPage: React.FC = () => {
                 }
                 label="Es retroactiva (no afecta disponibilidad)"
               />
+              
             </Grid>
 
             {/* CAMBIO DE TURNO */}
