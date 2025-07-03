@@ -57,7 +57,7 @@ async function renovarDisponibilidad() {
       let necesitaRenovacion = false;
 
       // Lógica para renovación anual
-      if (tipoLicencia.periodo_control === 'anual') {
+      if (tipoLicencia.periodo_control === 'año') {
         if (anoActual > anoUltimaActualizacion) {
           necesitaRenovacion = true;
           console.log(`  -> Renovación ANUAL para trabajador ${disp.trabajador_id}, licencia ${tipoLicencia.nombre}`);
@@ -65,7 +65,7 @@ async function renovarDisponibilidad() {
       }
 
       // Lógica para renovación mensual
-      if (tipoLicencia.periodo_control === 'mensual') {
+      if (tipoLicencia.periodo_control === 'mes') {
         // Renovar si el año es mayor, o si es el mismo año pero el mes es mayor
         if (anoActual > anoUltimaActualizacion || (anoActual === anoUltimaActualizacion && mesActual > mesUltimaActualizacion)) {
           necesitaRenovacion = true;
